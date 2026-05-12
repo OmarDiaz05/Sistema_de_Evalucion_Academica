@@ -1,0 +1,148 @@
+
+        body{
+            margin:0;
+            padding:30px 15px;
+            min-height:100vh;
+
+            display:flex;
+            justify-content:center;
+            align-items:center;
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            background: linear-gradient(
+                135deg,
+                #0d5bff,
+                #1d4ed8,
+                #6d28d9,
+                #a100ff
+            );
+        }
+
+        .login-card{
+            width:100%;
+            max-width:500px;
+
+            background:#f5f5f5;
+            border-radius:25px;
+
+            padding:40px 35px;
+
+            box-shadow:0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .icon-circle{
+            width: 72px;
+            height: 72px;
+            background: #2563ff;
+            border-radius: 50%;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            margin: auto;
+            margin-bottom: 20px;
+        }
+
+        .icon-circle i{
+            color:white;
+            font-size: 32px;
+        }
+
+        .title{
+            text-align:center;
+            font-size:72px;
+            font-weight:700;
+            color:#0f172a;
+            margin-bottom:10px;
+        }
+
+        .subtitle{
+            text-align:center;
+            color:#475569;
+            margin-bottom:35px;
+        }
+
+        .form-label{
+            font-weight:600;
+            color:#1e293b;
+            margin-bottom:10px;
+        }
+
+        .form-control{
+            height:55px;
+            border-radius:14px;
+            border:1px solid #d1d5db;
+            padding-left:18px;
+            font-size:18px;
+        }
+
+        .form-control:focus{
+            box-shadow:none;
+            border-color:#2563ff;
+        }
+
+        .login-btn{
+            width:100%;
+            height:55px;
+            border:none;
+            border-radius:14px;
+            background:#2563ff;
+            color:white;
+            font-size:22px;
+            font-weight:600;
+            transition:0.3s;
+        }
+
+        .login-btn:hover{
+            background:#1d4ed8;
+        }
+
+        .register-text{
+            text-align:center;
+            margin-top:28px;
+            color:#334155;
+        }
+
+        .register-text a{
+            text-decoration:none;
+            font-weight:600;
+            color:#2563ff;
+        }
+
+        hr{
+            margin:35px 0 25px;
+        }
+
+        .test-users{
+            text-align:center;
+            color:#475569;
+            margin-bottom:15px;
+        }
+
+        .user-box{
+            border-radius:10px;
+            padding:12px;
+            font-size:14px;
+        }
+
+        .teacher{
+            background:#e0e7ff;
+            color:#1e3a8a;
+        }
+
+        .student{
+            background:#dcfce7;
+            color:#166534;
+        }
+
+        @media(max-width:576px){
+
+            .login-card{
+                padding:30px 20px;
+            }
+
+            .title{
+                font-size:48px;
+            }
+
+        }
