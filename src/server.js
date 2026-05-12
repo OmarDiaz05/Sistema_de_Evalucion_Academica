@@ -49,7 +49,7 @@ app.post('/login', (req, res) => {
 
         // 4. Si la contraseña es correcta, revisamos el rol y redirigimos
         if (usuario.rol === 'docente') {
-            res.json({ message: 'Login exitoso', redirect: '/public/dashboard-docente.html' });
+            res.json({ message: 'Login exitoso', redirect: '/dashboard-docente.html' });
         } else if (usuario.rol === 'alumno') {
             res.json({ message: 'Login exitoso', redirect: '/dashboard-alumno.html' });
         }
