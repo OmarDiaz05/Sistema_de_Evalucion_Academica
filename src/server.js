@@ -21,6 +21,41 @@ app.get('/prueba-db', (req, res) => {
     });
 });
 
+
+// Ruta para procesar el Login
+app.post('/login', (req, res) => {
+    const { correo, password } = req.body;
+
+    // 1. Buscamos el correo en la base de datos
+    const query = 'SELECT * FROM Usuarios WHERE correo = ?';
+    
+    db.query(query, [correo], (err, results) => {
+        if (err) {
+            console.error('Error en la consulta:', err);
+            return res.status(500).json({ message: 'Error interno del servidor' });
+        }
+
+        // 2. Verificamos si el usuario existe
+        if (results.length === 0) {
+            return res.status(401).json({ message: 'El correo no está registrado' });
+        }
+
+        const usuario = results[0];
+
+        // 3. Comparamos la contraseña (Nota: Más adelante implementaremos bcrypt para contraseñas encriptadas)
+        if (password !== usuario.password) {
+            return res.status(401).json({ message: 'Contraseña incorrecta' });
+        }
+
+        // 4. Si la contraseña es correcta, revisamos el rol y redirigimos
+        if (usuario.rol === 'docente') {
+            res.json({ message: 'Login exitoso', redirect: '/public/dashboard-docente.html' });
+        } else if (usuario.rol === 'alumno') {
+            res.json({ message: 'Login exitoso', redirect: '/dashboard-alumno.html' });
+        }
+    });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
