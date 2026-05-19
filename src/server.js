@@ -52,6 +52,8 @@ app.post('/login', (req, res) => {
             res.json({ message: 'Login exitoso', redirect: '/dashboard-docente.html' });
         } else if (usuario.rol === 'alumno') {
             res.json({ message: 'Login exitoso', redirect: '/dashboard-alumno.html' });
+        } else {
+            res.status(403).json({ message: 'Rol de usuario no reconocido' });
         }
     });
 });
