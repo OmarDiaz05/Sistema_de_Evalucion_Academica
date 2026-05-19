@@ -17,6 +17,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
+            // Guardamos la información del usuario en el navegador
+            localStorage.setItem('usuarioLogueado', JSON.stringify(data.usuario));
+                    
             // Redireccionamos según el rol
             window.location.href = data.redirect;
         } else {

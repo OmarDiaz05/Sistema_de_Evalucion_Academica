@@ -49,11 +49,18 @@ app.post('/login', (req, res) => {
 
         // 4. Si la contraseña es correcta, revisamos el rol y redirigimos
         if (usuario.rol === 'docente') {
-            res.json({ message: 'Login exitoso', redirect: '/dashboard-docente.html' });
+            res.json({ 
+                message: 'Login exitoso', 
+                redirect: '/dashboard-docente.html',
+                // Enviamos los datos del usuario para guardarlos en el navegador
+                usuario: { id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido_paterno }
+            });
         } else if (usuario.rol === 'alumno') {
-            res.json({ message: 'Login exitoso', redirect: '/dashboard-alumno.html' });
-        } else {
-            res.status(403).json({ message: 'Rol de usuario no reconocido' });
+            res.json({ 
+                message: 'Login exitoso', 
+                redirect: '/dashboard-alumno.html',
+                usuario: { id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido_paterno }
+            });
         }
     });
 });
