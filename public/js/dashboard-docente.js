@@ -41,11 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalCrearAula.hide();
                 formCrearAula.reset();
                 
-                // --- ALERTA LLAMATIVA CON SWEETALERT2 ---
+                // --- ALERTA LLAMATIVA CON SWEETALERT2 
                 Swal.fire({
                     title: '¡Aula Creada con Éxito!',
                     html: `El código de acceso para tus alumnos es:<br><br>
-                           <strong style="font-size: 2rem; color: #1d4ed8; letter-spacing: 5px;">${data.codigo_clase}</strong>`,
+                    <strong class="codigo-destacado">${data.codigo_clase}</strong>`,
                     icon: 'success',
                     confirmButtonText: '¡Entendido!',
                     confirmButtonColor: '#198754'

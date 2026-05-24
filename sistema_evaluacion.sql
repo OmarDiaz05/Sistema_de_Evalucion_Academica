@@ -97,6 +97,7 @@ INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, passwo
 VALUES ('Oliver', 'Morales', 'Tilin', 'tilin@fes.com', '1234', 'docente', 'DOC-001');
 
 SELECT * FROM Usuarios;
+select * from aulas;
 
 USE sistema_evaluacion;
 

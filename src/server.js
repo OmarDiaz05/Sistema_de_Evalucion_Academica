@@ -103,6 +103,42 @@ app.delete('/borrar-aula/:id', (req, res) => {
         res.json({ message: 'Aula eliminada correctamente' });
     });
 });
+
+// 1. Obtener los alumnos que están en "espera" para entrar a un aula
+app.get('/aulas/:id/solicitudes', (req, res) => {
+    const aulaId = req.params.id;
+    
+    // Hacemos un JOIN para cruzar la tabla puente con la de Usuarios y obtener sus nombres
+    const query = `
+        SELECT Usuarios.id, Usuarios.nombre, Usuarios.apellido_paterno 
+        FROM Estudiantes_Aulas 
+        JOIN Usuarios ON Estudiantes_Aulas.estudiante_id = Usuarios.id 
+        WHERE Estudiantes_Aulas.aula_id = ? AND Estudiantes_Aulas.estado = 'pendiente'
+    `;
+    
+    db.query(query, [aulaId], (err, results) => {
+        if (err) {
+            console.error('Error al buscar solicitudes:', err);
+            return res.status(500).json({ message: 'Error interno del servidor' });
+        }
+        res.json(results);
+    });
+});
+
+// 2. Procesar la decisión del maestro (Aceptar o Rechazar)
+app.put('/aulas/responder-solicitud', (req, res) => {
+    const { estudiante_id, aula_id, estado } = req.body; 
+    
+    const query = 'UPDATE Estudiantes_Aulas SET estado = ? WHERE estudiante_id = ? AND aula_id = ?';
+    
+    db.query(query, [estado, estudiante_id, aula_id], (err) => {
+        if (err) {
+            console.error('Error al actualizar estado:', err);
+            return res.status(500).json({ message: 'Error al procesar la solicitud' });
+        }
+        res.json({ message: `El alumno ha sido ${estado} con éxito` });
+    });
+});
     
     // Usamos JOIN para unir la tabla Aulas con Materias y saber el nombre de la materia
     const query = `
