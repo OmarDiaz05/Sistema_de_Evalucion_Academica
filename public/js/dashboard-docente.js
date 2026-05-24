@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const docente_id = usuario.id; 
 
         try {
-            const response = await fetch('http://localhost:3000/crear-aula', {
+            const response = await fetch('http://localhost:3000/api/crear-aula', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre, materia_id, docente_id })
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Le pedimos a Node las aulas de ESTE maestro
-            const response = await fetch(`http://localhost:3000/aulas/${usuario.id}`);
+            const response = await fetch(`http://localhost:3000/api/aulas/${usuario.id}`);
             const aulas = await response.json();
 
             // Limpiamos el contenedor
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Si se confirma que se borra
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`http://localhost:3000/borrar-aula/${id}`, {
+                    const response = await fetch(`http://localhost:3000/api/borrar-aula/${id}`, {
                         method: 'DELETE'
                     });
 

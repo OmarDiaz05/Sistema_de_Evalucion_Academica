@@ -4,29 +4,45 @@ const db = require('./db');
 require('dotenv').config();
 
 const app = express();
+const apiRouter = express.Router();
+console.log('apiRouter created:', typeof apiRouter);
+
+// Dentro de src/server.js
+const express = require('express');
+const app = express();
+const path = require('path');
+
+// ESTA LÍNEA ES CLAVE: Le dice a Express dónde buscar el HTML y el CSS
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Middlewares
+const fs = require('fs');
+app.use((req, res, next) => {
+    fs.appendFileSync('trace.log', `APP: ${req.method} ${req.url}\n`);
+    next();
+});
 app.use(cors());
-app.use(express.json()); // Para poder recibir datos en formato JSON (de los formularios)
-app.use(express.static('public')); // Para que el navegador pueda ver mis carpetas de HTML/CSS
+app.use(express.json());
+app.use(express.static('public'));
 
 // Ruta de prueba para ver si la base de datos responde
 app.get('/prueba-db', (req, res) => {
+    fs.appendFileSync('trace.log', `PRUEBA-DB HANDLED: ${req.method} ${req.url}\n`);
     db.query('SELECT 1 + 1 AS resultado', (err, results) => {
         if (err) {
             res.status(500).send('Error en la base de datos');
         } else {
-            res.send('Conexión exitosa. El servidor y la DB se hablan correctamente.');
+            res.send('PRUEBA-DB ROUTE V2. El servidor y la DB se hablan correctamente.');
         }
     });
 });
 
+// ---- API Routes ----
 
-// Ruta para procesar el Login
-app.post('/login', (req, res) => {
+// Login
+apiRouter.post('/login', (req, res) => {
     const { correo, password } = req.body;
 
-    // 1. Buscamos el correo en la base de datos
     const query = 'SELECT * FROM Usuarios WHERE correo = ?';
     
     db.query(query, [correo], (err, results) => {
@@ -35,24 +51,20 @@ app.post('/login', (req, res) => {
             return res.status(500).json({ message: 'Error interno del servidor' });
         }
 
-        // 2. Verificamos si el usuario existe
         if (results.length === 0) {
             return res.status(401).json({ message: 'El correo no está registrado' });
         }
 
         const usuario = results[0];
 
-        // 3. Comparamos la contraseña (Nota: Más adelante implementaremos bcrypt para contraseñas encriptadas)
         if (password !== usuario.password) {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
-        // 4. Si la contraseña es correcta, revisamos el rol y redirigimos
         if (usuario.rol === 'docente') {
             res.json({ 
                 message: 'Login exitoso', 
                 redirect: '/dashboard-docente.html',
-                // Enviamos los datos del usuario para guardarlos en el navegador
                 usuario: { id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido_paterno }
             });
         } else if (usuario.rol === 'alumno') {
@@ -64,14 +76,13 @@ app.post('/login', (req, res) => {
         }
     });
 });
-// Ruta para Crear un Aula Nueva
-app.post('/crear-aula', (req, res) => {
+
+// Crear Aula
+apiRouter.post('/crear-aula', (req, res) => {
     const { nombre, materia_id, docente_id } = req.body;
 
-    // 2. Generamos un código de clase aleatorio de 6 caracteress
     const codigo_clase = Math.random().toString(36).substring(2, 8).toUpperCase(); 
 
-    // 3. Guardamos en la base de datos
     const query = 'INSERT INTO Aulas (codigo_clase, nombre, docente_id, materia_id) VALUES (?, ?, ?, ?)';
     
     db.query(query, [codigo_clase, nombre, docente_id, materia_id], (err, results) => {
@@ -80,67 +91,14 @@ app.post('/crear-aula', (req, res) => {
             return res.status(500).json({ message: 'Error al crear el aula' });
         }
         
-        // Respondemos con éxito y le mandamos el código al maestro
         res.json({ message: 'Aula creada', codigo_clase: codigo_clase });
     });
 });
 
-// Ruta para obtener las aulas de un docente específico
-app.get('/aulas/:docente_id', (req, res) => {
+// Obtener aulas de un docente
+apiRouter.get('/aulas/:docente_id', (req, res) => {
     const docente_id = req.params.docente_id;
 
-  // Ruta para eliminar un aula específica
-app.delete('/borrar-aula/:id', (req, res) => {
-    const aulaId = req.params.id;
-
-    const query = 'DELETE FROM Aulas WHERE id = ?';
-
-    db.query(query, [aulaId], (err, results) => {
-        if (err) {
-            console.error('Error al eliminar el aula:', err);
-            return res.status(500).json({ message: 'No se pudo eliminar el aula. Asegúrate de que no tenga exámenes o alumnos inscritos.' });
-        }
-        res.json({ message: 'Aula eliminada correctamente' });
-    });
-});
-
-// 1. Obtener los alumnos que están en "espera" para entrar a un aula
-app.get('/aulas/:id/solicitudes', (req, res) => {
-    const aulaId = req.params.id;
-    
-    // Hacemos un JOIN para cruzar la tabla puente con la de Usuarios y obtener sus nombres
-    const query = `
-        SELECT Usuarios.id, Usuarios.nombre, Usuarios.apellido_paterno 
-        FROM Estudiantes_Aulas 
-        JOIN Usuarios ON Estudiantes_Aulas.estudiante_id = Usuarios.id 
-        WHERE Estudiantes_Aulas.aula_id = ? AND Estudiantes_Aulas.estado = 'pendiente'
-    `;
-    
-    db.query(query, [aulaId], (err, results) => {
-        if (err) {
-            console.error('Error al buscar solicitudes:', err);
-            return res.status(500).json({ message: 'Error interno del servidor' });
-        }
-        res.json(results);
-    });
-});
-
-// 2. Procesar la decisión del maestro (Aceptar o Rechazar)
-app.put('/aulas/responder-solicitud', (req, res) => {
-    const { estudiante_id, aula_id, estado } = req.body; 
-    
-    const query = 'UPDATE Estudiantes_Aulas SET estado = ? WHERE estudiante_id = ? AND aula_id = ?';
-    
-    db.query(query, [estado, estudiante_id, aula_id], (err) => {
-        if (err) {
-            console.error('Error al actualizar estado:', err);
-            return res.status(500).json({ message: 'Error al procesar la solicitud' });
-        }
-        res.json({ message: `El alumno ha sido ${estado} con éxito` });
-    });
-});
-    
-    // Usamos JOIN para unir la tabla Aulas con Materias y saber el nombre de la materia
     const query = `
         SELECT Aulas.id, Aulas.codigo_clase, Aulas.nombre, Materias.nombre AS materia_nombre 
         FROM Aulas 
@@ -154,11 +112,187 @@ app.put('/aulas/responder-solicitud', (req, res) => {
             console.error('Error al obtener aulas:', err);
             return res.status(500).json({ message: 'Error interno del servidor' });
         }
-        res.json(results); // Devolvemos la lista de aulas en formato JSON
+        res.json(results);
     });
 });
+
+// Eliminar aula
+apiRouter.delete('/borrar-aula/:id', (req, res) => {
+    const aulaId = req.params.id;
+
+    const query = 'DELETE FROM Aulas WHERE id = ?';
+
+    db.query(query, [aulaId], (err, results) => {
+        if (err) {
+            console.error('Error al eliminar el aula:', err);
+            return res.status(500).json({ message: 'No se pudo eliminar el aula. Asegúrate de que no tenga exámenes o alumnos inscritos.' });
+        }
+        res.json({ message: 'Aula eliminada correctamente' });
+    });
+});
+
+// Obtener preguntas del docente
+apiRouter.get('/preguntas/:docente_id', (req, res) => {
+    const docente_id = req.params.docente_id;
+    const query = `
+        SELECT Preguntas.*, Materias.nombre AS materia_nombre
+        FROM Preguntas
+        JOIN Materias ON Preguntas.materia_id = Materias.id
+        WHERE Preguntas.docente_id = ?
+        ORDER BY Preguntas.id DESC
+    `;
+    db.query(query, [docente_id], (err, results) => {
+        if (err) {
+            console.error('Error al obtener preguntas:', err);
+            return res.status(500).json({ message: 'Error al cargar preguntas' });
+        }
+        res.json(results);
+    });
+});
+
+// Crear pregunta
+apiRouter.post('/preguntas', (req, res) => {
+    const { materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion } = req.body;
+    const query = `INSERT INTO Preguntas (materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    db.query(query, [materia_id, docente_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion], (err, results) => {
+        if (err) {
+            console.error('Error al crear pregunta:', err);
+            return res.status(500).json({ message: 'Error al crear la pregunta' });
+        }
+        res.json({ message: 'Pregunta creada', id: results.insertId });
+    });
+});
+
+// Editar pregunta
+apiRouter.put('/preguntas/:id', (req, res) => {
+    const preguntaId = req.params.id;
+    const { materia_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion } = req.body;
+    const query = `UPDATE Preguntas SET materia_id = ?, texto_pregunta = ?, tipo = ?, opcion_a = ?, opcion_b = ?, opcion_c = ?, opcion_d = ?, respuesta_correcta = ?, tema_retroalimentacion = ? WHERE id = ?`;
+    db.query(query, [materia_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion, preguntaId], (err, results) => {
+        if (err) {
+            console.error('Error al editar pregunta:', err);
+            return res.status(500).json({ message: 'Error al editar la pregunta' });
+        }
+        res.json({ message: 'Pregunta actualizada' });
+    });
+});
+
+// Eliminar pregunta
+apiRouter.delete('/preguntas/:id', (req, res) => {
+    const preguntaId = req.params.id;
+    const query = 'DELETE FROM Preguntas WHERE id = ?';
+    db.query(query, [preguntaId], (err, results) => {
+        if (err) {
+            console.error('Error al eliminar pregunta:', err);
+            return res.status(500).json({ message: 'Error al eliminar la pregunta' });
+        }
+        res.json({ message: 'Pregunta eliminada' });
+    });
+});
+
+// Obtener detalle de un aula (materia_id)
+apiRouter.get('/aula-detalle/:aula_id', (req, res) => {
+    const aula_id = req.params.aula_id;
+    const query = 'SELECT id, nombre, materia_id FROM Aulas WHERE id = ?';
+    db.query(query, [aula_id], (err, results) => {
+        if (err) {
+            console.error('Error al obtener aula:', err);
+            return res.status(500).json({ message: 'Error al cargar aula' });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Aula no encontrada' });
+        }
+        res.json(results[0]);
+    });
+});
+
+// Obtener preguntas filtradas por materia
+apiRouter.get('/preguntas-por-materia/:docente_id/:materia_id', (req, res) => {
+    const { docente_id, materia_id } = req.params;
+    const query = `
+        SELECT id, texto_pregunta, tipo, respuesta_correcta, tema_retroalimentacion
+        FROM Preguntas
+        WHERE docente_id = ? AND materia_id = ?
+        ORDER BY id DESC
+    `;
+    db.query(query, [docente_id, materia_id], (err, results) => {
+        if (err) {
+            console.error('Error al obtener preguntas:', err);
+            return res.status(500).json({ message: 'Error al cargar preguntas' });
+        }
+        res.json(results);
+    });
+});
+
+// Listar exámenes de un aula
+apiRouter.get('/examenes/:aula_id', (req, res) => {
+    const aula_id = req.params.aula_id;
+    const query = `
+        SELECT e.*, COUNT(ep.pregunta_id) AS total_preguntas
+        FROM Examenes e
+        LEFT JOIN Examen_Preguntas ep ON e.id = ep.examen_id
+        WHERE e.aula_id = ?
+        GROUP BY e.id
+        ORDER BY e.fecha_apertura DESC
+    `;
+    db.query(query, [aula_id], (err, results) => {
+        if (err) {
+            console.error('Error al obtener exámenes:', err);
+            return res.status(500).json({ message: 'Error al cargar exámenes' });
+        }
+        res.json(results);
+    });
+});
+
+// Crear examen (con preguntas)
+apiRouter.post('/examenes', (req, res) => {
+    const { aula_id, titulo, fecha_apertura, fecha_cierre, tiempo_limite_minutos, preguntas } = req.body;
+    const queryExamen = 'INSERT INTO Examenes (aula_id, titulo, fecha_apertura, fecha_cierre, tiempo_limite_minutos) VALUES (?, ?, ?, ?, ?)';
+    db.query(queryExamen, [aula_id, titulo, fecha_apertura, fecha_cierre, tiempo_limite_minutos], (err, result) => {
+        if (err) {
+            console.error('Error al crear examen:', err);
+            return res.status(500).json({ message: 'Error al crear el examen' });
+        }
+        const examenId = result.insertId;
+        if (preguntas && preguntas.length > 0) {
+            const values = preguntas.map(p => [examenId, p]);
+            const queryPreguntas = 'INSERT INTO Examen_Preguntas (examen_id, pregunta_id) VALUES ?';
+            db.query(queryPreguntas, [values], (err) => {
+                if (err) {
+                    console.error('Error al asignar preguntas:', err);
+                    return res.status(500).json({ message: 'Examen creado pero error al asignar preguntas' });
+                }
+                res.json({ message: 'Examen creado correctamente', id: examenId });
+            });
+        } else {
+            res.json({ message: 'Examen creado sin preguntas', id: examenId });
+        }
+    });
+});
+
+// Eliminar examen
+apiRouter.delete('/examenes/:id', (req, res) => {
+    const examenId = req.params.id;
+    const query = 'DELETE FROM Examenes WHERE id = ?';
+    db.query(query, [examenId], (err, results) => {
+        if (err) {
+            console.error('Error al eliminar examen:', err);
+            return res.status(500).json({ message: 'Error al eliminar el examen' });
+        }
+        res.json({ message: 'Examen eliminado correctamente' });
+    });
+});
+
+// Mount API routes
+apiRouter.use((req, res, next) => {
+    console.error(`API Router: ${req.method} ${req.url}`);
+    next();
+});
+console.log('apiRouter stack length:', apiRouter.stack ? apiRouter.stack.length : 'no stack');
+app.use('/api', apiRouter);
+console.log('API routes mounted');
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
