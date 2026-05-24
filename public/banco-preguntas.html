@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Preguntas | ExamClass</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/banco-preguntas.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="dashboard-docente.html">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+            </a>
+            <span class="navbar-text text-white fw-bold">
+                <i class="bi bi-question-circle me-1"></i>Banco de Preguntas
+            </span>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold text-dark mb-0">
+                <i class="bi bi-collection me-2 text-primary"></i>Mis Preguntas
+            </h4>
+            <button class="btn btn-success fw-bold" id="btnNuevaPregunta">
+                <i class="bi bi-plus-lg"></i> Nueva Pregunta
+            </button>
+        </div>
+        <div id="contenedorPreguntas" class="row"></div>
+    </div>
+    <div class="modal fade" id="modalPregunta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="modalTitulo">
+                        <i class="bi bi-plus-circle"></i> <span id="tituloAccion">Nueva</span> Pregunta
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formPregunta">
+                        <input type="hidden" id="preguntaId">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Materia</label>
+                                <select id="materia_id" class="form-select" required>
+                                    <option value="">Selecciona...</option>
+                                    <option value="1">Matemáticas</option>
+                                    <option value="2">Biología</option>
+                                    <option value="3">Historia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo de Pregunta</label>
+                                <select id="tipo" class="form-select" required>
+                                    <option value="">Selecciona...</option>
+                                    <option value="opcion_multiple">Opción Múltiple</option>
+                                    <option value="arrastre">Arrastrar y Soltar</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Pregunta</label>
+                            <textarea id="texto_pregunta" class="form-control" rows="3" placeholder="Escribe la pregunta aquí..." required></textarea>
+                        </div>
+                        <div id="opcionesContainer" class="row mb-3">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Opción A</label>
+                                <input id="opcion_a" class="form-control" placeholder="Opción A">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Opción B</label>
+                                <input id="opcion_b" class="form-control" placeholder="Opción B">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Opción C</label>
+                                <input id="opcion_c" class="form-control" placeholder="Opción C">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Opción D</label>
+                                <input id="opcion_d" class="form-control" placeholder="Opción D">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold" id="labelRespuesta">Respuesta Correcta</label>
+                                <select id="respuesta_correcta_select" class="form-select">
+                                    <option value="">Selecciona...</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                                <input id="respuesta_correcta_text" class="form-control" placeholder="Escribe la respuesta correcta" style="display:none;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tema de Retroalimentación</label>
+                                <input id="tema_retroalimentacion" class="form-control" placeholder="Ej. Álgebra, Revolución Mexicana..." required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            <i class="bi bi-check-lg"></i> Guardar Pregunta
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/banco-preguntas.js"></script>
+</body>
+</html>

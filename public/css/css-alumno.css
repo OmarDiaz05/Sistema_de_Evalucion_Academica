@@ -1,0 +1,17 @@
+/* Animación suave al pasar el cursor sobre las tarjetas de las materias */
+.card-aula {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-aula:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estilo especial para el input del código del aula */
+.input-codigo {
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}

@@ -7,14 +7,6 @@ const app = express();
 const apiRouter = express.Router();
 console.log('apiRouter created:', typeof apiRouter);
 
-// Dentro de src/server.js
-const express = require('express');
-const app = express();
-const path = require('path');
-
-// ESTA LÍNEA ES CLAVE: Le dice a Express dónde buscar el HTML y el CSS
-app.use(express.static(path.join(__dirname, '../public')));
-
 // Middlewares
 const fs = require('fs');
 app.use((req, res, next) => {
@@ -283,12 +275,36 @@ apiRouter.delete('/examenes/:id', (req, res) => {
     });
 });
 
+// Registro de usuarios
+apiRouter.post('/registro', async (req, res) => {
+    const { nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula } = req.body;
+    if (!nombre || !apellido_paterno || !correo || !password || !rol) {
+        return res.status(400).json({ message: 'Todos los campos obligatorios deben ser llenados' });
+    }
+    try {
+        const passwordHash = await bcrypt.hash(password, 10);
+        const query = 'INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        db.query(query, [nombre, apellido_paterno, apellido_materno || null, correo, passwordHash, rol, matricula || null], (err, result) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(400).json({ message: 'El correo ya está registrado' });
+                }
+                console.error('Error al registrar usuario:', err);
+                return res.status(500).json({ message: 'Error interno del servidor' });
+            }
+            res.json({ message: 'Usuario registrado correctamente' });
+        });
+    } catch (error) {
+        console.error('Error al hashear contraseña:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+});
+
 // Mount API routes
 apiRouter.use((req, res, next) => {
-    console.error(`API Router: ${req.method} ${req.url}`);
+    fs.appendFileSync('trace.log', `API: ${req.method} ${req.url}\n`);
     next();
 });
-console.log('apiRouter stack length:', apiRouter.stack ? apiRouter.stack.length : 'no stack');
 app.use('/api', apiRouter);
 console.log('API routes mounted');
 

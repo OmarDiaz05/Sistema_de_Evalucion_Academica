@@ -1,0 +1,43 @@
+body {
+    background-color: #f8f9fa;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.card-pregunta {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 16px;
+    border: none;
+}
+.card-pregunta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+}
+.badge-tipo {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+.pregunta-texto {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #1e293b;
+}
+.opcion-item {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.modal-content {
+    border-radius: 20px;
+}
+.modal-header {
+    border-radius: 20px 20px 0 0;
+}
+.form-control, .form-select {
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    padding: 10px 14px;
+}
+.form-control:focus, .form-select:focus {
+    box-shadow: none;
+    border-color: #2563ff;
+}
