@@ -217,12 +217,12 @@ async function cargarSolicitudes() {
         }
     }
 }
-async function responderSolicitud(estudiante_id, estado) {
+async function responderSolicitud(solicitud_id, estado) {
     try {
         const response = await fetch(`${API}/aulas/responder-solicitud`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estudiante_id: parseInt(estudiante_id), aula_id: parseInt(aulaId), estado })
+            body: JSON.stringify({ solicitud_id: parseInt(solicitud_id), estado })
         });
         if (response.ok) {
             Swal.fire({

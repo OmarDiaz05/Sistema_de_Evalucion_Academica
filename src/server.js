@@ -124,6 +124,50 @@ apiRouter.delete('/borrar-aula/:id', (req, res) => {
     });
 });
 
+// ---- RUTAS DE ALUMNO ----
+
+// Unirse a aula mediante código
+apiRouter.post('/unirse-aula', (req, res) => {
+    const { estudiante_id, codigo_clase } = req.body;
+    if (!estudiante_id || !codigo_clase) {
+        return res.status(400).json({ message: 'Faltan datos' });
+    }
+    const queryBuscar = 'SELECT id FROM Aulas WHERE codigo_clase = ?';
+    db.query(queryBuscar, [codigo_clase.toUpperCase()], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error del servidor' });
+        if (results.length === 0) return res.status(404).json({ message: 'Código de clase inválido' });
+        const aula_id = results[0].id;
+        const queryInsert = 'INSERT INTO Estudiantes_Aulas (aula_id, estudiante_id, estado) VALUES (?, ?, \'pendiente\')';
+        db.query(queryInsert, [aula_id, estudiante_id], (err) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Ya enviaste solicitud a esta aula' });
+                return res.status(500).json({ message: 'Error del servidor' });
+            }
+            res.json({ message: 'Solicitud enviada. Espera a que el docente te acepte.' });
+        });
+    });
+});
+
+// Obtener aulas del alumno (con estado y datos del docente)
+apiRouter.get('/alumno/aulas/:estudiante_id', (req, res) => {
+    const query = `
+        SELECT Aulas.id, Aulas.nombre AS aula_nombre, Aulas.codigo_clase,
+               Materias.nombre AS materia_nombre,
+               CONCAT(Usuarios.nombre, ' ', Usuarios.apellido_paterno) AS docente_nombre,
+               Estudiantes_Aulas.estado
+        FROM Estudiantes_Aulas
+        JOIN Aulas ON Estudiantes_Aulas.aula_id = Aulas.id
+        JOIN Materias ON Aulas.materia_id = Materias.id
+        JOIN Usuarios ON Aulas.docente_id = Usuarios.id
+        WHERE Estudiantes_Aulas.estudiante_id = ?
+        ORDER BY Estudiantes_Aulas.id DESC
+    `;
+    db.query(query, [req.params.estudiante_id], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error del servidor' });
+        res.json(results);
+    });
+});
+
 // Obtener solicitudes pendientes de un aula
 apiRouter.get('/aulas/:aulaId/solicitudes', (req, res) => {
     const aulaId = req.params.aulaId;
@@ -145,15 +189,15 @@ apiRouter.get('/aulas/:aulaId/solicitudes', (req, res) => {
 
 // Responder solicitud (aceptar/rechazar)
 apiRouter.put('/aulas/responder-solicitud', (req, res) => {
-    const { estudiante_id, aula_id, estado } = req.body;
-    if (!estudiante_id || !aula_id || !estado) {
+    const { solicitud_id, estado } = req.body;
+    if (!solicitud_id || !estado) {
         return res.status(400).json({ message: 'Datos incompletos' });
     }
     if (!['aceptado', 'rechazado'].includes(estado)) {
         return res.status(400).json({ message: 'Estado inválido' });
     }
-    const query = 'UPDATE Estudiantes_Aulas SET estado = ? WHERE aula_id = ? AND estudiante_id = ?';
-    db.query(query, [estado, aula_id, estudiante_id], (err, result) => {
+    const query = 'UPDATE Estudiantes_Aulas SET estado = ? WHERE id = ?';
+    db.query(query, [estado, solicitud_id], (err, result) => {
         if (err) {
             console.error('Error al responder solicitud:', err);
             return res.status(500).json({ message: 'Error al procesar la solicitud' });
@@ -314,6 +358,126 @@ apiRouter.delete('/examenes/:id', (req, res) => {
             return res.status(500).json({ message: 'Error al eliminar el examen' });
         }
         res.json({ message: 'Examen eliminado correctamente' });
+    });
+});
+
+// Exámenes pendientes del alumno en un aula (no realizados aún)
+apiRouter.get('/alumno/examenes-pendientes/:aula_id/:estudiante_id', (req, res) => {
+    const query = `
+        SELECT e.id, e.titulo, e.fecha_apertura, e.fecha_cierre, e.tiempo_limite_minutos
+        FROM Examenes e
+        WHERE e.aula_id = ?
+          AND e.id NOT IN (
+              SELECT r.examen_id FROM Resultados r WHERE r.estudiante_id = ?
+          )
+        ORDER BY e.fecha_apertura ASC
+    `;
+    db.query(query, [req.params.aula_id, req.params.estudiante_id], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error del servidor' });
+        res.json(results);
+    });
+});
+
+// Obtener preguntas de un examen (incluye tiempo límite)
+apiRouter.get('/examen/:examen_id/preguntas', (req, res) => {
+    const queryExamen = 'SELECT titulo, tiempo_limite_minutos FROM Examenes WHERE id = ?';
+    db.query(queryExamen, [req.params.examen_id], (err, examData) => {
+        if (err || examData.length === 0) return res.status(500).json({ message: 'Error del servidor' });
+        const queryPreguntas = `
+            SELECT Preguntas.id, Preguntas.texto_pregunta, Preguntas.tipo,
+                   Preguntas.opcion_a, Preguntas.opcion_b, Preguntas.opcion_c, Preguntas.opcion_d,
+                   Preguntas.tema_retroalimentacion
+            FROM Examen_Preguntas
+            JOIN Preguntas ON Examen_Preguntas.pregunta_id = Preguntas.id
+            WHERE Examen_Preguntas.examen_id = ?
+            ORDER BY Examen_Preguntas.pregunta_id ASC
+        `;
+        db.query(queryPreguntas, [req.params.examen_id], (err, preguntas) => {
+            if (err) return res.status(500).json({ message: 'Error del servidor' });
+            res.json({
+                titulo: examData[0].titulo,
+                tiempo_limite_minutos: examData[0].tiempo_limite_minutos,
+                preguntas
+            });
+        });
+    });
+});
+
+// Entregar examen (calificar automáticamente)
+apiRouter.post('/examen/entregar', (req, res) => {
+    const { examen_id, estudiante_id, respuestas } = req.body;
+    if (!examen_id || !estudiante_id || !respuestas) {
+        return res.status(400).json({ message: 'Faltan datos' });
+    }
+    const queryPreguntas = 'SELECT id, respuesta_correcta, tema_retroalimentacion FROM Preguntas WHERE id IN (?)';
+    const ids = respuestas.map(r => r.pregunta_id);
+    db.query(queryPreguntas, [ids], (err, preguntas) => {
+        if (err || preguntas.length === 0) return res.status(500).json({ message: 'Error del servidor' });
+        let correctas = 0;
+        const detalles = preguntas.map(p => {
+            const respuesta = respuestas.find(r => r.pregunta_id === p.id);
+            const dada = respuesta ? respuesta.respuesta_dada.trim().toUpperCase() : '';
+            const correcta = p.respuesta_correcta.trim().toUpperCase();
+            const esCorrecta = dada === correcta;
+            if (esCorrecta) correctas++;
+            return {
+                pregunta_id: p.id,
+                respuesta_dada: dada,
+                es_correcta: esCorrecta,
+                tema_retroalimentacion: esCorrecta ? null : p.tema_retroalimentacion
+            };
+        });
+        const calificacion = (correctas / preguntas.length) * 10;
+        const queryResultado = 'INSERT INTO Resultados (examen_id, estudiante_id, calificacion) VALUES (?, ?, ?)';
+        db.query(queryResultado, [examen_id, estudiante_id, calificacion], (err, result) => {
+            if (err) return res.status(500).json({ message: 'Error al guardar resultado' });
+            const resultado_id = result.insertId;
+            const values = detalles.map(d => [resultado_id, d.pregunta_id, d.respuesta_dada, d.es_correcta]);
+            const queryRespuestas = 'INSERT INTO Respuestas_Alumno (resultado_id, pregunta_id, respuesta_dada, es_correcta) VALUES ?';
+            db.query(queryRespuestas, [values], (err) => {
+                if (err) return res.status(500).json({ message: 'Error al guardar respuestas' });
+                const temasFallidos = detalles.filter(d => !d.es_correcta).map(d => d.tema_retroalimentacion);
+                res.json({
+                    message: 'Examen entregado',
+                    calificacion: parseFloat(calificacion.toFixed(2)),
+                    total_preguntas: preguntas.length,
+                    correctas,
+                    temas_a_repasar: [...new Set(temasFallidos)]
+                });
+            });
+        });
+    });
+});
+
+// Resultado detallado de un examen realizado
+apiRouter.get('/alumno/resultados/:resultado_id', (req, res) => {
+    const query = `
+        SELECT r.calificacion, r.fecha_realizacion,
+               ra.pregunta_id, ra.respuesta_dada, ra.es_correcta,
+               p.texto_pregunta, p.respuesta_correcta, p.tema_retroalimentacion, p.tipo
+        FROM Resultados r
+        JOIN Respuestas_Alumno ra ON r.id = ra.resultado_id
+        JOIN Preguntas p ON ra.pregunta_id = p.id
+        WHERE r.id = ?
+    `;
+    db.query(query, [req.params.resultado_id], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Error del servidor' });
+        if (results.length === 0) return res.status(404).json({ message: 'Resultado no encontrado' });
+        const temasFallidos = results.filter(r => !r.es_correcta).map(r => r.tema_retroalimentacion);
+        res.json({
+            calificacion: results[0].calificacion,
+            fecha_realizacion: results[0].fecha_realizacion,
+            preguntas: results.map(r => ({
+                pregunta_id: r.pregunta_id,
+                texto_pregunta: r.texto_pregunta,
+                tipo: r.tipo,
+                respuesta_dada: r.respuesta_dada,
+                respuesta_correcta: r.respuesta_correcta,
+                es_correcta: r.es_correcta,
+                tema_retroalimentacion: r.tema_retroalimentacion
+            })),
+            temas_a_repasar: [...new Set(temasFallidos)]
+        });
     });
 });
 

@@ -103,3 +103,14 @@ USE sistema_evaluacion;
 
 INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol) 
 VALUES ('Benito', 'Martinez', 'Garcia', 'tito@fes.com', '12345', 'alumno');
+
+-- 10. Respuestas de Alumnos por pregunta (para calificar y dar retroalimentación)
+CREATE TABLE IF NOT EXISTS Respuestas_Alumno (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    resultado_id INT NOT NULL,
+    pregunta_id INT NOT NULL,
+    respuesta_dada VARCHAR(255) NOT NULL,
+    es_correcta BOOLEAN NOT NULL,
+    FOREIGN KEY (resultado_id) REFERENCES Resultados(id),
+    FOREIGN KEY (pregunta_id) REFERENCES Preguntas(id)
+);
