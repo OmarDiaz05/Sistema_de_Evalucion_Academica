@@ -1,0 +1,48 @@
+body {
+    background-color: #f8f9fa;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.card-examen {
+    border-radius: 14px;
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-examen:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+}
+.pregunta-check-item {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.pregunta-check-item:hover {
+    background: #f1f5f9;
+}
+.pregunta-check-item input:checked + .pregunta-texto {
+    font-weight: 600;
+    color: #1d4ed8;
+}
+.sin-preguntas-msg {
+    padding: 20px;
+    background: #fff3cd;
+    border-radius: 10px;
+    color: #856404;
+}
+.modal-content {
+    border-radius: 20px;
+}
+.modal-header {
+    border-radius: 20px 20px 0 0;
+}
+.form-control, .form-select {
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    padding: 10px 14px;
+}
+.form-control:focus, .form-select:focus {
+    box-shadow: none;
+    border-color: #2563ff;
+}

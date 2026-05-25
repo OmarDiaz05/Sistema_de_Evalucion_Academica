@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
 const db = require('./db'); 
 require('dotenv').config();
 
@@ -120,6 +121,47 @@ apiRouter.delete('/borrar-aula/:id', (req, res) => {
             return res.status(500).json({ message: 'No se pudo eliminar el aula. Asegúrate de que no tenga exámenes o alumnos inscritos.' });
         }
         res.json({ message: 'Aula eliminada correctamente' });
+    });
+});
+
+// Obtener solicitudes pendientes de un aula
+apiRouter.get('/aulas/:aulaId/solicitudes', (req, res) => {
+    const aulaId = req.params.aulaId;
+    const query = `
+        SELECT ea.id, ea.estudiante_id, u.nombre, u.apellido_paterno
+        FROM Estudiantes_Aulas ea
+        JOIN Usuarios u ON ea.estudiante_id = u.id
+        WHERE ea.aula_id = ? AND ea.estado = 'pendiente'
+        ORDER BY ea.id ASC
+    `;
+    db.query(query, [aulaId], (err, results) => {
+        if (err) {
+            console.error('Error al obtener solicitudes:', err);
+            return res.status(500).json({ message: 'Error al cargar solicitudes' });
+        }
+        res.json(results);
+    });
+});
+
+// Responder solicitud (aceptar/rechazar)
+apiRouter.put('/aulas/responder-solicitud', (req, res) => {
+    const { estudiante_id, aula_id, estado } = req.body;
+    if (!estudiante_id || !aula_id || !estado) {
+        return res.status(400).json({ message: 'Datos incompletos' });
+    }
+    if (!['aceptado', 'rechazado'].includes(estado)) {
+        return res.status(400).json({ message: 'Estado inválido' });
+    }
+    const query = 'UPDATE Estudiantes_Aulas SET estado = ? WHERE aula_id = ? AND estudiante_id = ?';
+    db.query(query, [estado, aula_id, estudiante_id], (err, result) => {
+        if (err) {
+            console.error('Error al responder solicitud:', err);
+            return res.status(500).json({ message: 'Error al procesar la solicitud' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Solicitud no encontrada' });
+        }
+        res.json({ message: estado === 'aceptado' ? 'Alumno aceptado' : 'Solicitud rechazada' });
     });
 });
 

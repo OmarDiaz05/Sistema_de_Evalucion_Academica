@@ -210,7 +210,11 @@ async function cargarSolicitudes() {
         });
     } catch (error) {
         console.error('Error al cargar solicitudes:', error);
-        contenedor.innerHTML = `<div class="alert alert-danger">Problemas al conectar con el servidor.</div>`;
+        if (error instanceof TypeError) {
+            contenedor.innerHTML = `<div class="alert alert-danger">Problemas al conectar con el servidor.</div>`;
+        } else {
+            contenedor.innerHTML = `<div class="alert alert-danger">Error del servidor: ${error.message}</div>`;
+        }
     }
 }
 async function responderSolicitud(estudiante_id, estado) {
@@ -228,10 +232,17 @@ async function responderSolicitud(estudiante_id, estado) {
                 showConfirmButton: false
             });
             cargarSolicitudes();
+        } else {
+            const result = await response.json();
+            Swal.fire('Error', result.message, 'error');
         }
     } catch (error) {
         console.error('Error al procesar:', error);
-        Swal.fire('Error', 'Hubo un problema de red.', 'error');
+        if (error instanceof TypeError) {
+            Swal.fire('Error', 'Hubo un problema de red.', 'error');
+        } else {
+            Swal.fire('Error', error.message, 'error');
+        }
     }
 }
 // ---- Iniciar ----
