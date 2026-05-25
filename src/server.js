@@ -355,6 +355,9 @@ apiRouter.delete('/examenes/:id', (req, res) => {
     db.query(query, [examenId], (err, results) => {
         if (err) {
             console.error('Error al eliminar examen:', err);
+            if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+                return res.status(500).json({ message: 'No se puede eliminar: hay alumnos que ya presentaron este examen. Ejecuta el script CASCADE en la BD primero.' });
+            }
             return res.status(500).json({ message: 'Error al eliminar el examen' });
         }
         res.json({ message: 'Examen eliminado correctamente' });

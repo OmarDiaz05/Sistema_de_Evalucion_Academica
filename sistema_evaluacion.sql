@@ -88,7 +88,7 @@ CREATE TABLE Resultados (
     estudiante_id INT NOT NULL,
     calificacion DECIMAL(5,2) NOT NULL,
     fecha_realizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (examen_id) REFERENCES Examenes(id),
+    FOREIGN KEY (examen_id) REFERENCES Examenes(id) ON DELETE CASCADE,
     FOREIGN KEY (estudiante_id) REFERENCES Usuarios(id)
 );
 
@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS Respuestas_Alumno (
     pregunta_id INT NOT NULL,
     respuesta_dada VARCHAR(255) NOT NULL,
     es_correcta BOOLEAN NOT NULL,
-    FOREIGN KEY (resultado_id) REFERENCES Resultados(id),
+    FOREIGN KEY (resultado_id) REFERENCES Resultados(id) ON DELETE CASCADE,
     FOREIGN KEY (pregunta_id) REFERENCES Preguntas(id)
 );
+
+-- 11. Corregir FKs existentes en la base de datos para que tengan CASCADE
+ALTER TABLE Resultados DROP FOREIGN KEY IF EXISTS resultados_ibfk_1;
+ALTER TABLE Resultados ADD FOREIGN KEY (examen_id) REFERENCES Examenes(id) ON DELETE CASCADE;
+ALTER TABLE Respuestas_Alumno DROP FOREIGN KEY IF EXISTS respuestas_alumno_ibfk_1;
+ALTER TABLE Respuestas_Alumno ADD FOREIGN KEY (resultado_id) REFERENCES Resultados(id) ON DELETE CASCADE;

@@ -130,6 +130,9 @@ document.getElementById('formExamen').addEventListener('submit', async (e) => {
         const result = await response.json();
         if (response.ok) {
             modalExamen.hide();
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
             document.getElementById('formExamen').reset();
             Swal.fire('¡Éxito!', result.message, 'success');
             cargarExamenes();
