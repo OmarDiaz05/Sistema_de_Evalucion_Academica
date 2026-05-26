@@ -266,7 +266,7 @@ document.getElementById('btnEntregar').addEventListener('click', () => {
 });
 
 async function entregarExamen(porTiempo) {
-    if (examenEntregado) return;
+    if (examenEntregado) return true;
     examenEntregado = true;
     clearInterval(temporizador);
 
