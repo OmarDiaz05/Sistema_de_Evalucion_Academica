@@ -755,7 +755,7 @@ apiRouter.get('/alumno/historial/:estudianteId', (req, res) => {
 });
 
 // Registro de usuarios
-apiRouter.post('/registro', async (req, res) => {
+apiRouter.post('/registro', (req, res) => {
     const { nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula } = req.body;
     if (!nombre || !apellido_paterno || !correo || !password || !rol) {
         return res.status(400).json({ message: 'Todos los campos obligatorios deben ser llenados' });
@@ -763,25 +763,40 @@ apiRouter.post('/registro', async (req, res) => {
     if (rol === 'docente' && !matricula) {
         return res.status(400).json({ message: 'La matrícula es obligatoria para registrarse como docente' });
     }
-    try {
-        const passwordHash = await bcrypt.hash(password, 10);
-        const query = 'INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) VALUES (?, ?, ?, ?, ?, ?, ?)';
-        db.query(query, [nombre, apellido_paterno, apellido_materno || null, correo, passwordHash, rol, matricula || null], (err, result) => {
-            if (err) {
-                if (err.code === 'ER_DUP_ENTRY') {
-                    if (err.sqlMessage && err.sqlMessage.includes('matricula')) {
-                        return res.status(400).json({ message: 'La matrícula ya está en uso' });
+
+    const procederRegistro = async () => {
+        try {
+            const passwordHash = await bcrypt.hash(password, 10);
+            const query = 'INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            db.query(query, [nombre, apellido_paterno, apellido_materno || null, correo, passwordHash, rol, matricula || null], (err, result) => {
+                if (err) {
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        return res.status(400).json({ message: 'El correo ya está registrado' });
                     }
-                    return res.status(400).json({ message: 'El correo ya está registrado' });
+                    console.error('Error al registrar usuario:', err);
+                    return res.status(500).json({ message: 'Error interno del servidor' });
                 }
-                console.error('Error al registrar usuario:', err);
+                res.json({ message: 'Usuario registrado correctamente' });
+            });
+        } catch (error) {
+            console.error('Error al hashear contraseña:', error);
+            res.status(500).json({ message: 'Error interno del servidor' });
+        }
+    };
+
+    if (rol === 'docente' && matricula) {
+        db.query('SELECT id FROM Usuarios WHERE matricula = ?', [matricula.trim()], (err, results) => {
+            if (err) {
+                console.error('Error al verificar matrícula:', err);
                 return res.status(500).json({ message: 'Error interno del servidor' });
             }
-            res.json({ message: 'Usuario registrado correctamente' });
+            if (results.length > 0) {
+                return res.status(400).json({ message: 'La matrícula ya está en uso' });
+            }
+            procederRegistro();
         });
-    } catch (error) {
-        console.error('Error al hashear contraseña:', error);
-        res.status(500).json({ message: 'Error interno del servidor' });
+    } else {
+        procederRegistro();
     }
 });
 
