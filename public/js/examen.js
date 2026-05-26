@@ -421,13 +421,22 @@ document.addEventListener('click', async (e) => {
     if (!href || href.startsWith('#') || href.startsWith('http')) return;
     e.preventDefault();
     const confirmar = await Swal.fire({
-        title: '¿Salir del examen?',
-        text: 'Si sales ahora el examen se marcará como entregado y no podrás volver a ingresar.',
+        title: '<span class="fw-bold">¿Salir del examen?</span>',
+        html: '<div class="text-muted" style="font-size:0.95rem">Si sales ahora el examen <span class="fw-semibold text-danger">se marcará como entregado</span> y no podrás volver a ingresar.</div>',
         icon: 'warning',
+        iconColor: '#dc3545',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
         confirmButtonText: 'Sí, salir y entregar',
-        cancelButtonText: 'Seguir en el examen'
+        cancelButtonText: 'Seguir en el examen',
+        cancelButtonColor: '#0d6efd',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-4 shadow-lg border-0',
+            confirmButton: 'btn btn-danger btn-lg fw-bold px-4 rounded-pill',
+            cancelButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
+        },
+        buttonsStyling: false
     });
     if (confirmar.isConfirmed) {
         const ok = await entregarExamen(true);
@@ -439,10 +448,17 @@ document.addEventListener('click', async (e) => {
             document.getElementById('btnEntregar').innerHTML =
                 '<i class="bi bi-check2-square me-2"></i>Entregar Examen';
             Swal.fire({
-                title: 'Error al entregar',
-                text: 'Hubo un problema al conectar con el servidor. Puedes intentarlo de nuevo.',
+                title: '<span class="fw-bold">Error al entregar</span>',
+                html: '<div class="text-muted" style="font-size:0.95rem">Hubo un problema al conectar con el servidor.<br>Puedes intentarlo de nuevo.</div>',
                 icon: 'error',
-                confirmButtonText: 'Entendido'
+                iconColor: '#dc3545',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0',
+                    confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
+                },
+                buttonsStyling: false
             });
         }
     }

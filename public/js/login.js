@@ -1,33 +1,49 @@
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault(); // Evita que la página se recargue
+    e.preventDefault();
 
     const correo = document.getElementById('correo').value;
     const password = document.getElementById('password').value;
 
     try {
-        // Enviamos los datos a Node.js
         const response = await fetch('http://localhost:3000/api/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ correo, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            // Guardamos la información del usuario en el navegador
             localStorage.setItem('usuarioLogueado', JSON.stringify(data.usuario));
-                    
-            // Redireccionamos según el rol
             window.location.href = data.redirect;
         } else {
-            // Mostramos alerta si hay error
-            alert(data.message);
+            Swal.fire({
+                title: '<span class="fw-bold">Error al iniciar sesión</span>',
+                html: '<div class="text-muted" style="font-size:0.95rem">' + data.message + '</div>',
+                icon: 'error',
+                iconColor: '#dc3545',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0',
+                    confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
+                },
+                buttonsStyling: false
+            });
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor.');
+        Swal.fire({
+            title: '<span class="fw-bold">Error de conexión</span>',
+            html: '<div class="text-muted" style="font-size:0.95rem">No se pudo conectar con el servidor.<br>Verifica tu conexión e intenta de nuevo.</div>',
+            icon: 'error',
+            iconColor: '#dc3545',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#0d6efd',
+            customClass: {
+                popup: 'rounded-4 shadow-lg border-0',
+                confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
+            },
+            buttonsStyling: false
+        });
     }
 });
