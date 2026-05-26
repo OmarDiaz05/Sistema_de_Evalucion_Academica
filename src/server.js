@@ -499,7 +499,7 @@ apiRouter.get('/examen/:examen_id/preguntas', (req, res) => {
 
 // Entregar examen (calificar automáticamente)
 apiRouter.post('/examen/entregar', (req, res) => {
-    const { examen_id, estudiante_id, respuestas } = req.body;
+    const { examen_id, estudiante_id, respuestas, tiempo_tomado } = req.body;
     if (!examen_id || !estudiante_id || !respuestas) {
         return res.status(400).json({ message: 'Faltan datos' });
     }
@@ -522,8 +522,9 @@ apiRouter.post('/examen/entregar', (req, res) => {
             };
         });
         const calificacion = (correctas / preguntas.length) * 10;
-        const queryResultado = 'INSERT INTO Resultados (examen_id, estudiante_id, calificacion) VALUES (?, ?, ?)';
-        db.query(queryResultado, [examen_id, estudiante_id, calificacion], (err, result) => {
+        const tiempoFinal = tiempo_tomado || null;
+        const queryResultado = 'INSERT INTO Resultados (examen_id, estudiante_id, calificacion, tiempo_tomado) VALUES (?, ?, ?, ?)';
+        db.query(queryResultado, [examen_id, estudiante_id, calificacion, tiempoFinal], (err, result) => {
             if (err) return res.status(500).json({ message: 'Error al guardar resultado' });
             const resultado_id = result.insertId;
             const values = detalles.map(d => [resultado_id, d.pregunta_id, d.respuesta_dada, d.es_correcta]);
@@ -572,6 +573,141 @@ apiRouter.get('/alumno/resultados/:resultado_id', (req, res) => {
             })),
             temas_a_repasar: [...new Set(temasFallidos)]
         });
+    });
+});
+
+// Obtener estudiantes aceptados en un aula
+apiRouter.get('/aulas/:aulaId/estudiantes', (req, res) => {
+    const aulaId = req.params.aulaId;
+    const query = `
+        SELECT u.id, u.nombre, u.apellido_paterno, u.apellido_materno
+        FROM Estudiantes_Aulas ea
+        JOIN Usuarios u ON ea.estudiante_id = u.id
+        WHERE ea.aula_id = ? AND ea.estado = 'aceptado'
+        ORDER BY u.apellido_paterno ASC
+    `;
+    db.query(query, [aulaId], (err, results) => {
+        if (err) {
+            console.error('Error al obtener estudiantes:', err);
+            return res.status(500).json({ message: 'Error al cargar estudiantes' });
+        }
+        res.json(results);
+    });
+});
+
+// Estadisticas de un estudiante en un aula
+apiRouter.get('/aulas/:aulaId/estudiantes/:estudianteId/estadisticas', (req, res) => {
+    const { aulaId, estudianteId } = req.params;
+    // Obtener datos del estudiante
+    const queryEst = 'SELECT id, nombre, apellido_paterno, apellido_materno FROM Usuarios WHERE id = ?';
+    db.query(queryEst, [estudianteId], (err, estData) => {
+        if (err || estData.length === 0) return res.status(500).json({ message: 'Error del servidor' });
+        // Obtener todos los examenes del aula
+        const queryExamenes = `
+            SELECT e.id, e.titulo, e.tiempo_limite_minutos,
+                   (SELECT COUNT(*) FROM Examen_Preguntas WHERE examen_id = e.id) AS total_preguntas
+            FROM Examenes e WHERE e.aula_id = ? ORDER BY e.fecha_apertura DESC
+        `;
+        db.query(queryExamenes, [aulaId], (err, examenes) => {
+            if (err) return res.status(500).json({ message: 'Error del servidor' });
+            // Obtener resultados del estudiante en este aula
+            const queryResultados = `
+                SELECT r.examen_id, r.calificacion, r.fecha_realizacion, r.tiempo_tomado,
+                       (SELECT COUNT(*) FROM Respuestas_Alumno WHERE resultado_id = r.id AND es_correcta = 1) AS correctas
+                FROM Resultados r WHERE r.estudiante_id = ? AND r.examen_id IN (
+                    SELECT id FROM Examenes WHERE aula_id = ?
+                )
+            `;
+            db.query(queryResultados, [estudianteId, aulaId], (err, resultados) => {
+                if (err) return res.status(500).json({ message: 'Error del servidor' });
+                const resultadosMap = {};
+                resultados.forEach(r => { resultadosMap[r.examen_id] = r; });
+                let completados = 0;
+                let sumaCalif = 0;
+                const examenesData = examenes.map(ex => {
+                    const res = resultadosMap[ex.id];
+                    if (res) {
+                        completados++;
+                        sumaCalif += parseFloat(res.calificacion);
+                        return {
+                            examen_id: ex.id,
+                            titulo: ex.titulo,
+                            total_preguntas: ex.total_preguntas,
+                            calificacion: res.calificacion,
+                            fecha_realizacion: res.fecha_realizacion,
+                            tiempo_tomado: res.tiempo_tomado,
+                            correctas: res.correctas,
+                            completado: true
+                        };
+                    }
+                    return {
+                        examen_id: ex.id,
+                        titulo: ex.titulo,
+                        total_preguntas: ex.total_preguntas,
+                        completado: false
+                    };
+                });
+                res.json({
+                    estudiante: estData[0],
+                    total_examenes: examenes.length,
+                    examenes_completados: completados,
+                    examenes_pendientes: examenes.length - completados,
+                    promedio: completados > 0 ? parseFloat((sumaCalif / completados).toFixed(2)) : null,
+                    examenes: examenesData
+                });
+            });
+        });
+    });
+});
+
+// Historial completo del alumno (todos los examenes de todas las aulas)
+apiRouter.get('/alumno/historial/:estudianteId', (req, res) => {
+    const estudianteId = req.params.estudianteId;
+    const query = `
+        SELECT r.id AS resultado_id, r.calificacion, r.fecha_realizacion, r.tiempo_tomado,
+               e.id AS examen_id, e.titulo AS examen_titulo,
+               a.id AS aula_id, a.nombre AS aula_nombre,
+               m.nombre AS materia_nombre,
+               CONCAT(u.nombre, ' ', u.apellido_paterno) AS docente_nombre,
+               (SELECT COUNT(*) FROM Examen_Preguntas WHERE examen_id = e.id) AS total_preguntas,
+               (SELECT COUNT(*) FROM Respuestas_Alumno WHERE resultado_id = r.id AND es_correcta = 1) AS correctas
+        FROM Resultados r
+        JOIN Examenes e ON r.examen_id = e.id
+        JOIN Aulas a ON e.aula_id = a.id
+        JOIN Materias m ON a.materia_id = m.id
+        JOIN Usuarios u ON a.docente_id = u.id
+        WHERE r.estudiante_id = ?
+        ORDER BY r.fecha_realizacion DESC
+    `;
+    db.query(query, [estudianteId], (err, results) => {
+        if (err) {
+            console.error('Error al obtener historial:', err);
+            return res.status(500).json({ message: 'Error al cargar historial' });
+        }
+        // Agrupar por aula
+        const aulasMap = {};
+        results.forEach(r => {
+            if (!aulasMap[r.aula_id]) {
+                aulasMap[r.aula_id] = {
+                    aula_id: r.aula_id,
+                    aula_nombre: r.aula_nombre,
+                    materia_nombre: r.materia_nombre,
+                    docente_nombre: r.docente_nombre,
+                    examenes: []
+                };
+            }
+            aulasMap[r.aula_id].examenes.push({
+                resultado_id: r.resultado_id,
+                examen_id: r.examen_id,
+                titulo: r.examen_titulo,
+                calificacion: r.calificacion,
+                fecha_realizacion: r.fecha_realizacion,
+                tiempo_tomado: r.tiempo_tomado,
+                total_preguntas: r.total_preguntas,
+                correctas: r.correctas
+            });
+        });
+        res.json(Object.values(aulasMap));
     });
 });
 

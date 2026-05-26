@@ -12,6 +12,7 @@ let preguntas = [];
 let respuestas = {};
 let temporizador = null;
 let segundosRestantes = 0;
+let totalSegundos = 0;
 let examenEntregado = false;
 
 // ---- Cargar examen ----
@@ -24,6 +25,7 @@ async function cargarExamen() {
 
         document.getElementById('tituloExamenNav').textContent = data.titulo || `Examen (${preguntas.length} preguntas)`;
         segundosRestantes = (data.tiempo_limite_minutos || 60) * 60;
+        totalSegundos = segundosRestantes;
         renderizarPreguntas();
         iniciarTemporizador();
     } catch (error) {
@@ -153,6 +155,8 @@ async function entregarExamen(porTiempo) {
         respuesta_dada: String(respuesta_dada)
     }));
 
+    const tiempoTomado = Math.floor((totalSegundos - segundosRestantes) / 60);
+
     try {
         const response = await fetch(`${API}/examen/entregar`, {
             method: 'POST',
@@ -160,7 +164,8 @@ async function entregarExamen(porTiempo) {
             body: JSON.stringify({
                 examen_id: parseInt(examenId),
                 estudiante_id: usuario.id,
-                respuestas: respuestasArray
+                respuestas: respuestasArray,
+                tiempo_tomado: tiempoTomado
             })
         });
         const data = await response.json();

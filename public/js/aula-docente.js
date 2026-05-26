@@ -12,6 +12,7 @@ let aulaMateriaId = null;
 const modalExamen = new bootstrap.Modal(document.getElementById('modalExamen'));
 const modalEditarExamen = new bootstrap.Modal(document.getElementById('modalEditarExamen'));
 const modalResultados = new bootstrap.Modal(document.getElementById('modalResultados'));
+const modalEstudianteStats = new bootstrap.Modal(document.getElementById('modalEstudianteStats'));
 // ---- Obtener info del aula ----
 async function cargarInfoAula() {
     try {
@@ -348,6 +349,97 @@ async function cargarSolicitudes() {
         }
     }
 }
+// ---- Cargar estudiantes aceptados ----
+async function cargarEstudiantes() {
+    const contenedor = document.getElementById('contenedorEstudiantes');
+    try {
+        const response = await fetch(`${API}/aulas/${aulaId}/estudiantes`);
+        if (!response.ok) throw new Error('Error al cargar estudiantes');
+        const estudiantes = await response.json();
+        if (estudiantes.length === 0) {
+            contenedor.innerHTML = `
+                <div class="text-center text-muted my-5">
+                    <i class="bi bi-people display-4 mb-3 text-secondary d-block"></i>
+                    <p class="fs-5">No hay estudiantes inscritos.</p>
+                </div>`;
+            return;
+        }
+        contenedor.innerHTML = estudiantes.map(e => `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2 estudiante-item" data-id="${e.id}" style="cursor:pointer;">
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-circle text-warning me-2"></i>${e.nombre} ${e.apellido_paterno} ${e.apellido_materno || ''}</h6>
+                    <small class="text-muted">ID: ${e.id}</small>
+                </div>
+                <button class="btn btn-outline-warning btn-sm btn-ver-stats" data-id="${e.id}" data-nombre="${e.nombre} ${e.apellido_paterno}" title="Ver estadísticas">
+                    <i class="bi bi-graph-up"></i>
+                </button>
+            </div>
+        `).join('');
+        document.querySelectorAll('.btn-ver-stats').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                verEstadisticas(btn.dataset.id, btn.dataset.nombre);
+            });
+        });
+    } catch (error) {
+        console.error('Error al cargar estudiantes:', error);
+        contenedor.innerHTML = `<div class="alert alert-danger">Error al cargar estudiantes.</div>`;
+    }
+}
+
+// ---- Ver estadisticas de un estudiante ----
+async function verEstadisticas(estudianteId, nombre) {
+    document.getElementById('statsNombreEstudiante').textContent = nombre;
+    document.getElementById('cuerpoStatsExamenes').innerHTML = '<tr><td colspan="5" class="text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando...</td></tr>';
+    modalEstudianteStats.show();
+    try {
+        const response = await fetch(`${API}/aulas/${aulaId}/estudiantes/${estudianteId}/estadisticas`);
+        if (!response.ok) throw new Error('Error al cargar estadísticas');
+        const data = await response.json();
+        document.getElementById('statsCompletados').textContent = data.examenes_completados;
+        document.getElementById('statsPendientes').textContent = data.examenes_pendientes;
+        const promedioEl = document.getElementById('statsPromedio');
+        if (data.promedio !== null) {
+            promedioEl.textContent = data.promedio.toFixed(1);
+            promedioEl.className = 'fw-bold mb-0 ' + (data.promedio >= 6 ? 'text-success' : 'text-danger');
+        } else {
+            promedioEl.textContent = '-';
+            promedioEl.className = 'fw-bold mb-0 text-muted';
+        }
+        const tbody = document.getElementById('cuerpoStatsExamenes');
+        if (data.examenes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay exámenes en esta aula.</td></tr>';
+        } else {
+            tbody.innerHTML = data.examenes.map(ex => {
+                if (ex.completado) {
+                    const tiempo = ex.tiempo_tomado ? `${Math.floor(ex.tiempo_tomado / 60)}:${String(ex.tiempo_tomado % 60).padStart(2, '0')} min` : '-';
+                    return `
+                        <tr>
+                            <td>${ex.titulo}</td>
+                            <td><span class="badge bg-success">Completado</span></td>
+                            <td><span class="badge ${parseFloat(ex.calificacion) >= 6 ? 'bg-success' : 'bg-danger'}">${parseFloat(ex.calificacion).toFixed(1)}</span></td>
+                            <td>${tiempo}</td>
+                            <td>${new Date(ex.fecha_realizacion).toLocaleString()}</td>
+                        </tr>
+                    `;
+                }
+                return `
+                    <tr>
+                        <td>${ex.titulo}</td>
+                        <td><span class="badge bg-secondary">Pendiente</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error en verEstadisticas:', error);
+        document.getElementById('cuerpoStatsExamenes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar estadísticas.</td></tr>';
+    }
+}
+
 async function responderSolicitud(solicitud_id, estado) {
     try {
         const response = await fetch(`${API}/aulas/responder-solicitud`, {
@@ -386,3 +478,4 @@ document.getElementById('btnCrearExamen').addEventListener('click', () => {
 cargarInfoAula();
 cargarExamenes();
 cargarSolicitudes();
+cargarEstudiantes();
