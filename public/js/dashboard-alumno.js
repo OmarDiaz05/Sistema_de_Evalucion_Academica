@@ -97,11 +97,16 @@ async function renderAulaActiva(contenedor, aula) {
     const tarjeta = document.createElement('div');
     tarjeta.className = 'col';
     tarjeta.innerHTML = `
-        <div class="card h-100 card-aula border-0 shadow-sm">
-            <div class="card-header bg-dark text-white p-3">
-                <span class="badge bg-success mb-2">Activa</span>
-                <h5 class="card-title mb-1">${aula.aula_nombre}</h5>
-                <p class="card-text small text-white-50 mb-0">Prof. ${aula.docente_nombre} · ${aula.materia_nombre}</p>
+        <div class="card h-100 card-aula shadow-sm">
+            <div class="card-header bg-dark text-white p-3 d-flex align-items-center gap-3">
+                <div class="aula-icon bg-white bg-opacity-10 text-white">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <div>
+                    <span class="badge bg-success mb-1">Activa</span>
+                    <h5 class="card-title mb-0 fs-6">${aula.aula_nombre}</h5>
+                    <small class="text-white-50">Prof. ${aula.docente_nombre} · ${aula.materia_nombre}</small>
+                </div>
             </div>
             <div class="card-body">
                 ${examenesHTML}
@@ -114,15 +119,20 @@ function renderAulaPendiente(contenedor, aula) {
     const tarjeta = document.createElement('div');
     tarjeta.className = 'col';
     tarjeta.innerHTML = `
-        <div class="card h-100 card-aula border-0 shadow-sm opacity-75">
-            <div class="card-header bg-secondary text-white p-3">
-                <span class="badge bg-warning text-dark mb-2"><i class="bi bi-clock-history me-1"></i> Esperando aprobación</span>
-                <h5 class="card-title mb-1">${aula.aula_nombre}</h5>
-                <p class="card-text small text-white-50 mb-0">${aula.materia_nombre}</p>
+        <div class="card h-100 card-aula shadow-sm opacity-75">
+            <div class="card-header bg-secondary text-white p-3 d-flex align-items-center gap-3">
+                <div class="aula-icon bg-white bg-opacity-10 text-white">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <span class="badge bg-warning text-dark mb-1"><i class="bi bi-clock-history me-1"></i> Pendiente</span>
+                    <h5 class="card-title mb-0 fs-6">${aula.aula_nombre}</h5>
+                    <small class="text-white-50">${aula.materia_nombre}</small>
+                </div>
             </div>
-            <div class="card-body d-flex flex-column justify-content-between bg-white">
-                <p class="card-text text-muted fst-italic">El docente recibió tu solicitud. Podrás ingresar en cuanto sea aceptada.</p>
-                <button class="btn btn-secondary w-100 mt-3" disabled><i class="bi bi-lock-fill me-1"></i> Acceso Restringido</button>
+            <div class="card-body">
+                <p class="card-text text-muted small">El docente recibió tu solicitud. Podrás ingresar en cuanto sea aceptada.</p>
+                <button class="btn btn-secondary w-100" disabled><i class="bi bi-lock-fill me-1"></i> Acceso Restringido</button>
             </div>
         </div>`;
     contenedor.appendChild(tarjeta);

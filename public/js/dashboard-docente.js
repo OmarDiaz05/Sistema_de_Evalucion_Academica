@@ -89,24 +89,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // Si tiene aulas, dibujamos una tarjeta por cada una
             aulas.forEach(aula => {
                 const tarjeta = `
-                    <div class="col-md-4 mb-4" id="aula-${aula.id}">
-                        <div class="card h-100 shadow-sm border-0 rounded-4 border-top border-primary border-4">
-                            <div class="card-body p-4 p-flex d-flex flex-column justify-content-between">
-                                <div>
-                                    <h5 class="fw-bold text-dark mb-1">${aula.nombre}</h5>
-                                    <p class="text-primary fw-semibold mb-3">
-                                        <i class="bi bi-book"></i> ${aula.materia_nombre}
-                                    </p>
-                                    <div class="bg-light p-3 rounded-3 text-center mb-3 border">
-                                        <span class="d-block text-muted small mb-1">Código de Clase</span>
-                                        <span class="fs-4 fw-bold font-monospace text-dark tracking-wide">${aula.codigo_clase}</span>
+                    <div class="col-md-6 col-lg-4 mb-4" id="aula-${aula.id}">
+                        <div class="card card-aula-docente h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="aula-icon bg-primary bg-opacity-10 text-primary">
+                                        <i class="bi bi-mortarboard-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0">${aula.nombre}</h5>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">${aula.materia_nombre}</span>
                                     </div>
                                 </div>
-                                <div class="row g-2">
+                                <div class="bg-light p-3 rounded-3 text-center mb-3 border">
+                                    <span class="d-block text-muted small mb-1">Código de Clase</span>
+                                    <span class="fs-4 fw-bold font-monospace text-dark">${aula.codigo_clase}</span>
+                                </div>
+                                <div class="mt-auto row g-2">
                                     <div class="col-8">
-                                        <button class="btn btn-outline-primary w-100 fw-bold" onclick="window.location.href='aula-docente.html?id=${aula.id}'">
-                                    <i class="bi bi-box-arrow-in-right"></i> Entrar
-                                    </button>
+                                        <button class="btn btn-primary w-100 fw-bold" onclick="window.location.href='aula-docente.html?id=${aula.id}'">
+                                            <i class="bi bi-box-arrow-in-right"></i> Entrar
+                                        </button>
                                     </div>
                                     <div class="col-4">
                                         <button class="btn btn-outline-danger w-100" onclick="eliminarAula(${aula.id})">

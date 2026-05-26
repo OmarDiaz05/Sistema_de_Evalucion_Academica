@@ -1,17 +1,38 @@
-/* Animación suave al pasar el cursor sobre las tarjetas de las materias */
-.card-aula {
-    transition: transform 0.2s, box-shadow 0.2s;
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f1f5f9;
 }
-
+.card-aula {
+    border-radius: 18px;
+    border: none;
+    transition: transform 0.25s, box-shadow 0.25s;
+    overflow: hidden;
+}
 .card-aula:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1) !important;
 }
-
-/* Estilo especial para el input del código del aula */
+.card-aula .card-body {
+    padding: 1.5rem;
+}
+.card-aula .aula-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
 .input-codigo {
     text-align: center;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
+    font-size: 1.3rem !important;
+}
+@media (max-width: 768px) {
+    .card-aula .card-body {
+        padding: 1rem;
+    }
 }

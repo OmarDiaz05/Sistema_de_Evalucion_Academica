@@ -1,43 +1,61 @@
 body {
-    background-color: #f8f9fa;
-    font-family: Arial, Helvetica, sans-serif;
+    background: #f1f5f9;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 .card-pregunta {
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-radius: 16px;
+    transition: transform 0.25s, box-shadow 0.25s;
+    border-radius: 18px;
     border: none;
 }
 .card-pregunta:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08) !important;
 }
 .badge-tipo {
-    font-size: 12px;
-    padding: 5px 12px;
+    font-size: 0.75rem;
+    padding: 5px 14px;
     border-radius: 20px;
+    font-weight: 600;
 }
 .pregunta-texto {
-    font-size: 15px;
+    font-size: 0.95rem;
     line-height: 1.5;
     color: #1e293b;
 }
 .opcion-item {
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin: 2px;
 }
 .modal-content {
-    border-radius: 20px;
+    border-radius: 22px;
+    border: none;
 }
 .modal-header {
-    border-radius: 20px 20px 0 0;
+    border-radius: 22px 22px 0 0;
 }
 .form-control, .form-select {
     border-radius: 12px;
-    border: 1px solid #d1d5db;
+    border: 1.5px solid #e2e8f0;
     padding: 10px 14px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 .form-control:focus, .form-select:focus {
-    box-shadow: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 255, 0.15);
     border-color: #2563ff;
+}
+#filtroMateria {
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+}
+@media (max-width: 576px) {
+    .card-pregunta {
+        margin-bottom: 0.5rem;
+    }
 }
