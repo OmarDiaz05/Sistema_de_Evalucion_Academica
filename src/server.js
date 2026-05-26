@@ -50,7 +50,13 @@ apiRouter.post('/login', (req, res) => {
 
         const usuario = results[0];
 
-        if (password !== usuario.password) {
+        let passwordValida = false;
+        try {
+            passwordValida = bcrypt.compareSync(password, usuario.password);
+        } catch {
+            passwordValida = (password === usuario.password);
+        }
+        if (!passwordValida) {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
@@ -754,12 +760,18 @@ apiRouter.post('/registro', async (req, res) => {
     if (!nombre || !apellido_paterno || !correo || !password || !rol) {
         return res.status(400).json({ message: 'Todos los campos obligatorios deben ser llenados' });
     }
+    if (rol === 'docente' && !matricula) {
+        return res.status(400).json({ message: 'La matrícula es obligatoria para registrarse como docente' });
+    }
     try {
         const passwordHash = await bcrypt.hash(password, 10);
         const query = 'INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) VALUES (?, ?, ?, ?, ?, ?, ?)';
         db.query(query, [nombre, apellido_paterno, apellido_materno || null, correo, passwordHash, rol, matricula || null], (err, result) => {
             if (err) {
                 if (err.code === 'ER_DUP_ENTRY') {
+                    if (err.sqlMessage && err.sqlMessage.includes('matricula')) {
+                        return res.status(400).json({ message: 'La matrícula ya está en uso' });
+                    }
                     return res.status(400).json({ message: 'El correo ya está registrado' });
                 }
                 console.error('Error al registrar usuario:', err);

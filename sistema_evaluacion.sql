@@ -94,7 +94,7 @@ CREATE TABLE Resultados (
 
 USE sistema_evaluacion;
 INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) 
-VALUES ('Oliver', 'Morales', 'Tilin', 'tilin@fes.com', '1234', 'docente', 'DOC-001');
+VALUES ('Oliver', 'Morales', 'Tilin', 'tilin@fes.com', '$2b$10$xV4eeYp6nWm/yP5Wmr2Ru.NRbd0KQzJhj/VfoSi8hIMxw5M6Z8C7.', 'docente', 'DOC-001');
 
 SELECT * FROM Usuarios;
 select * from aulas;
@@ -102,7 +102,7 @@ select * from aulas;
 USE sistema_evaluacion;
 
 INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol) 
-VALUES ('Benito', 'Martinez', 'Garcia', 'tito@fes.com', '12345', 'alumno');
+VALUES ('Benito', 'Martinez', 'Garcia', 'tito@fes.com', '$2b$10$cX.wQeMXWGhKYSLe96LezO/aYFmvjbvpnwsDh0hlWSde6LxGIrz8K', 'alumno');
 
 -- 10. Respuestas de Alumnos por pregunta (para calificar y dar retroalimentación)
 CREATE TABLE IF NOT EXISTS Respuestas_Alumno (

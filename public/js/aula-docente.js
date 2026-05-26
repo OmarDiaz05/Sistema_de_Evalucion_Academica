@@ -175,13 +175,13 @@ document.getElementById('formExamen').addEventListener('submit', async (e) => {
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
             document.getElementById('formExamen').reset();
-            Swal.fire('¡Éxito!', result.message, 'success');
+            showAlertSuccess('¡Éxito!', result.message);
             cargarExamenes();
         } else {
-            Swal.fire('Error', result.message, 'error');
+            showAlertError('Error', result.message);
         }
     } catch (error) {
-        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+        showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
     }
 });
 // ---- Editar examen ----
@@ -205,7 +205,7 @@ async function editarExamen(id) {
         modalEditarExamen.show();
     } catch (error) {
         console.error('Error en editarExamen:', error);
-        Swal.fire('Error', 'No se pudo cargar el examen para editar.', 'error');
+        showAlertError('Error', 'No se pudo cargar el examen para editar.');
     }
 }
 document.getElementById('formEditarExamen').addEventListener('submit', async (e) => {
@@ -232,13 +232,13 @@ document.getElementById('formEditarExamen').addEventListener('submit', async (e)
             document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
-            Swal.fire('¡Actualizado!', result.message, 'success');
+            showAlertSuccess('¡Actualizado!', result.message);
             cargarExamenes();
         } else {
-            Swal.fire('Error', result.message, 'error');
+            showAlertError('Error', result.message);
         }
     } catch (error) {
-        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+        showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
     }
 });
 // ---- Ver resultados ----
@@ -273,35 +273,31 @@ async function verResultados(examenId) {
         modalResultados.show();
     } catch (error) {
         console.error('Error en verResultados:', error);
-        Swal.fire('Error', 'No se pudieron cargar los resultados.', 'error');
+        showAlertError('Error', 'No se pudieron cargar los resultados.');
     }
 }
 // ---- Eliminar examen ----
-function eliminarExamen(id) {
-    Swal.fire({
-        title: '¿Eliminar este examen?',
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                const response = await fetch(`${API}/examenes/${id}`, { method: 'DELETE' });
-                const data = await response.json();
-                if (response.ok) {
-                    Swal.fire('¡Eliminado!', data.message, 'success');
-                    cargarExamenes();
-                } else {
-                    Swal.fire('Error', data.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Error de conexión.', 'error');
+async function eliminarExamen(id) {
+    const confirmado = await showAlertConfirm(
+        '¿Eliminar este examen?',
+        'Esta acción no se puede deshacer.',
+        'Sí, eliminar',
+        '#dc3545'
+    );
+    if (confirmado) {
+        try {
+            const response = await fetch(`${API}/examenes/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (response.ok) {
+                showAlertSuccess('¡Eliminado!', data.message);
+                cargarExamenes();
+            } else {
+                showAlertError('Error', data.message);
             }
+        } catch (error) {
+            showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
         }
-    });
+    }
 }
 // ---- Cargar solicitudes de alumnos pendientes ----
 async function cargarSolicitudes() {
@@ -452,23 +448,21 @@ async function responderSolicitud(solicitud_id, estado) {
             body: JSON.stringify({ solicitud_id: parseInt(solicitud_id), estado })
         });
         if (response.ok) {
-            Swal.fire({
-                title: estado === 'aceptado' ? '¡Alumno Aceptado!' : 'Solicitud Rechazada',
-                icon: estado === 'aceptado' ? 'success' : 'info',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            showAlertToast(
+                estado === 'aceptado' ? 'success' : 'info',
+                estado === 'aceptado' ? 'Alumno aceptado correctamente' : 'Solicitud rechazada'
+            );
             cargarSolicitudes();
         } else {
             const result = await response.json();
-            Swal.fire('Error', result.message, 'error');
+            showAlertError('Error', result.message);
         }
     } catch (error) {
         console.error('Error al procesar:', error);
         if (error instanceof TypeError) {
-            Swal.fire('Error', 'Hubo un problema de red.', 'error');
+            showAlertError('Error de red', 'Hubo un problema de conexión.');
         } else {
-            Swal.fire('Error', error.message, 'error');
+            showAlertError('Error', error.message);
         }
     }
 }

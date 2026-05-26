@@ -17,33 +17,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             localStorage.setItem('usuarioLogueado', JSON.stringify(data.usuario));
             window.location.href = data.redirect;
         } else {
-            Swal.fire({
-                title: '<span class="fw-bold">Error al iniciar sesión</span>',
-                html: '<div class="text-muted" style="font-size:0.95rem">' + data.message + '</div>',
-                icon: 'error',
-                iconColor: '#dc3545',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#0d6efd',
-                customClass: {
-                    popup: 'rounded-4 shadow-lg border-0',
-                    confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
-                },
-                buttonsStyling: false
-            });
+            showAlertError('Error al iniciar sesión', data.message);
         }
     } catch (error) {
-        Swal.fire({
-            title: '<span class="fw-bold">Error de conexión</span>',
-            html: '<div class="text-muted" style="font-size:0.95rem">No se pudo conectar con el servidor.<br>Verifica tu conexión e intenta de nuevo.</div>',
-            icon: 'error',
-            iconColor: '#dc3545',
-            confirmButtonText: 'Entendido',
-            confirmButtonColor: '#0d6efd',
-            customClass: {
-                popup: 'rounded-4 shadow-lg border-0',
-                confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
-            },
-            buttonsStyling: false
-        });
+        showAlertError('Error de conexión', 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.');
     }
 });

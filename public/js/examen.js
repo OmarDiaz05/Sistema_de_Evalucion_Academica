@@ -317,12 +317,12 @@ async function entregarExamen(porTiempo) {
             mostrarResultados(data);
             return true;
         } else {
-            Swal.fire('Error', data.message, 'error');
+            showAlertError('Error', data.message);
             return false;
         }
     } catch (error) {
         if (!porTiempo) {
-            Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+            showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
             examenEntregado = false;
             document.getElementById('btnEntregar').disabled = false;
             document.getElementById('btnEntregar').innerHTML =
@@ -447,19 +447,7 @@ document.addEventListener('click', async (e) => {
             document.getElementById('btnEntregar').disabled = false;
             document.getElementById('btnEntregar').innerHTML =
                 '<i class="bi bi-check2-square me-2"></i>Entregar Examen';
-            Swal.fire({
-                title: '<span class="fw-bold">Error al entregar</span>',
-                html: '<div class="text-muted" style="font-size:0.95rem">Hubo un problema al conectar con el servidor.<br>Puedes intentarlo de nuevo.</div>',
-                icon: 'error',
-                iconColor: '#dc3545',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#0d6efd',
-                customClass: {
-                    popup: 'rounded-4 shadow-lg border-0',
-                    confirmButton: 'btn btn-primary btn-lg fw-bold px-4 rounded-pill'
-                },
-                buttonsStyling: false
-            });
+            showAlertError('Error al entregar', 'Hubo un problema al conectar con el servidor. Puedes intentarlo de nuevo.');
         }
     }
 });

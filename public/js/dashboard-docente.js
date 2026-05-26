@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Recargamos las aulas para que aparezca la nueva inmediatamente
                 cargarAulas();
             } else {
-                Swal.fire('Error', data.message, 'error');
+                showAlertError('Error', data.message);
             }
         } catch (error) {
             console.error('Error:', error);
-            Swal.fire('Error', 'Hubo un problema de conexión.', 'error');
+            showAlertError('Error de conexión', 'Hubo un problema de conexión con el servidor.');
         }
     });
 
@@ -132,46 +132,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LÓGICA PARA ELIMINAR UN AULA ---
     window.eliminarAula = async (id) => {
-        // Alerta de confirmación llamativa 
-        Swal.fire({
-            title: '¿Estás seguro de eliminar esta aula?',
-            text: "Esta acción no se puede deshacer y se perderán los datos asociados.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545', 
-            cancelButtonColor: '#6c757d',  
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            // Si se confirma que se borra
-            if (result.isConfirmed) {
-                try {
-                    const response = await fetch(`http://localhost:3000/api/borrar-aula/${id}`, {
-                        method: 'DELETE'
-                    });
+        const confirmado = await showAlertConfirm(
+            '¿Eliminar esta aula?',
+            'Esta acción no se puede deshacer y se perderán los datos asociados.',
+            'Sí, eliminar',
+            '#dc3545'
+        );
+        if (confirmado) {
+            try {
+                const response = await fetch(`http://localhost:3000/api/borrar-aula/${id}`, {
+                    method: 'DELETE'
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (response.ok) {
-                        Swal.fire(
-                            '¡Eliminada!',
-                            'El aula ha sido borrada correctamente.',
-                            'success'
-                        );
-                        // Volvemos a cargar las aulas para actualizar la pantalla
-                        cargarAulas();
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    Swal.fire('Error', 'Hubo un problema al conectar con el servidor.', 'error');
+                if (response.ok) {
+                    showAlertSuccess('¡Eliminada!', 'El aula ha sido borrada correctamente.');
+                    cargarAulas();
+                } else {
+                    showAlertError('Error', data.message);
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlertError('Error de conexión', 'Hubo un problema al conectar con el servidor.');
             }
-        });
+        }
     };
     cargarAulas();
 
 }); // Fin del DOMContentLoaded
-
-

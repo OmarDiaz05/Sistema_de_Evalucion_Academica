@@ -18,15 +18,15 @@ document.getElementById('formUnirseClase').addEventListener('submit', async (e) 
         });
         const data = await response.json();
         if (response.ok) {
-            Swal.fire('¡Solicitud enviada!', data.message, 'success');
+            showAlertSuccess('¡Solicitud enviada!', data.message);
             document.getElementById('codigoClase').value = '';
             bootstrap.Modal.getInstance(document.getElementById('modalUnirse')).hide();
             cargarAulas();
         } else {
-            Swal.fire('Error', data.message, 'error');
+            showAlertError('Error', data.message);
         }
     } catch (error) {
-        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+        showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
     }
 });
 

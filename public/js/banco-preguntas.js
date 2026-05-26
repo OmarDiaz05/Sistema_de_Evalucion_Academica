@@ -81,13 +81,13 @@ document.getElementById('formPregunta').addEventListener('submit', async (e) => 
         const result = await response.json();
         if (response.ok) {
             modalPregunta.hide();
-            Swal.fire('¡Éxito!', result.message, 'success');
+            showAlertSuccess('¡Éxito!', result.message);
             cargarPreguntas();
         } else {
-            Swal.fire('Error', result.message, 'error');
+            showAlertError('Error', result.message);
         }
     } catch (error) {
-        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+        showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
     }
 });
 let todasPreguntas = [];
@@ -235,34 +235,30 @@ async function editarPregunta(id) {
         }
         modalPregunta.show();
     } catch (error) {
-        Swal.fire('Error', 'No se pudo cargar la pregunta.', 'error');
+        showAlertError('Error', 'No se pudo cargar la pregunta para editar.');
     }
 }
 // ---- Eliminar ----
-function eliminarPregunta(id) {
-    Swal.fire({
-        title: '¿Eliminar esta pregunta?',
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                const response = await fetch(`${API}/preguntas/${id}`, { method: 'DELETE' });
-                const data = await response.json();
-                if (response.ok) {
-                    Swal.fire('¡Eliminada!', data.message, 'success');
-                    cargarPreguntas();
-                } else {
-                    Swal.fire('Error', data.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Error de conexión.', 'error');
+async function eliminarPregunta(id) {
+    const confirmado = await showAlertConfirm(
+        '¿Eliminar esta pregunta?',
+        'Esta acción no se puede deshacer.',
+        'Sí, eliminar',
+        '#dc3545'
+    );
+    if (confirmado) {
+        try {
+            const response = await fetch(`${API}/preguntas/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (response.ok) {
+                showAlertSuccess('¡Eliminada!', data.message);
+                cargarPreguntas();
+            } else {
+                showAlertError('Error', data.message);
             }
+        } catch (error) {
+            showAlertError('Error de conexión', 'No se pudo conectar con el servidor.');
         }
-    });
+    }
 }
 cargarPreguntas();
