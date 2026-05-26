@@ -390,4 +390,44 @@ function mostrarResultados(data) {
         </div>`;
 }
 
+// ---- Protección contra salida del examen ----
+window.addEventListener('beforeunload', (e) => {
+    if (examenEntregado) return;
+    e.preventDefault();
+    e.returnValue = '';
+    const respuestasArray = Object.entries(respuestas).map(([pregunta_id, respuesta_dada]) => ({
+        pregunta_id: parseInt(pregunta_id),
+        respuesta_dada: String(respuesta_dada)
+    }));
+    const tiempoTomado = totalSegundos - segundosRestantes;
+    navigator.sendBeacon(`${API}/examen/entregar`, new Blob([JSON.stringify({
+        examen_id: parseInt(examenId),
+        estudiante_id: usuario.id,
+        respuestas: respuestasArray,
+        tiempo_tomado: tiempoTomado
+    })], { type: 'application/json' }));
+    examenEntregado = true;
+});
+
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('a[href]');
+    if (!link || examenEntregado) return;
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('http')) return;
+    e.preventDefault();
+    const confirmar = await Swal.fire({
+        title: '¿Salir del examen?',
+        text: 'Si sales ahora el examen se marcará como entregado y no podrás volver a ingresar.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Sí, salir y entregar',
+        cancelButtonText: 'Seguir en el examen'
+    });
+    if (confirmar.isConfirmed) {
+        await entregarExamen(true);
+        window.location.href = href;
+    }
+});
+
 cargarExamen();
