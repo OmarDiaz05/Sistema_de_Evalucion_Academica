@@ -10,6 +10,8 @@ if (!aulaId) {
 }
 let aulaMateriaId = null;
 const modalExamen = new bootstrap.Modal(document.getElementById('modalExamen'));
+const modalEditarExamen = new bootstrap.Modal(document.getElementById('modalEditarExamen'));
+const modalResultados = new bootstrap.Modal(document.getElementById('modalResultados'));
 // ---- Obtener info del aula ----
 async function cargarInfoAula() {
     try {
@@ -26,6 +28,30 @@ async function cargarInfoAula() {
     }
 }
 // ---- Cargar preguntas disponibles para seleccionar ----
+function renderPreguntasCheckboxes(containerId, preguntas, seleccionadas) {
+    const contenedor = document.getElementById(containerId);
+    if (preguntas.length === 0) {
+        contenedor.innerHTML = `
+            <div class="sin-preguntas-msg text-center">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                No tienes preguntas en el banco para esta materia.
+                <a href="banco-preguntas.html" class="d-block mt-2">Ir al Banco de Preguntas</a>
+            </div>`;
+        return;
+    }
+    contenedor.innerHTML = preguntas.map(p => `
+        <div class="pregunta-check-item d-flex align-items-center mb-2">
+            <input type="checkbox" class="form-check-input me-3" value="${p.id}" id="${containerId}_${p.id}" ${seleccionadas.includes(p.id) ? 'checked' : ''}>
+            <label for="${containerId}_${p.id}" class="form-check-label w-100">
+                <strong>${p.texto_pregunta}</strong>
+                <span class="badge ${p.tipo === 'opcion_multiple' ? 'bg-primary' : 'bg-warning text-dark'} ms-2">
+                    ${p.tipo === 'opcion_multiple' ? 'Opción Múltiple' : 'Arrastrar'}
+                </span>
+                <small class="d-block text-muted">${p.tema_retroalimentacion}</small>
+            </label>
+        </div>
+    `).join('');
+}
 async function cargarPreguntasDisponibles() {
     const contenedor = document.getElementById('listaPreguntas');
     if (!aulaMateriaId) {
@@ -95,14 +121,28 @@ async function cargarExamenes() {
                         </small>
                         <span class="badge bg-info mt-2">${e.total_preguntas} preguntas</span>
                     </div>
-                    <button class="btn btn-outline-danger btn-sm btn-eliminar-examen" data-id="${e.id}">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm btn-editar-examen" data-id="${e.id}" title="Editar examen">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-sm btn-resultados-examen" data-id="${e.id}" title="Ver resultados">
+                            <i class="bi bi-bar-chart"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm btn-eliminar-examen" data-id="${e.id}" title="Eliminar examen">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `).join('');
         document.querySelectorAll('.btn-eliminar-examen').forEach(btn => {
             btn.addEventListener('click', () => eliminarExamen(btn.dataset.id));
+        });
+        document.querySelectorAll('.btn-editar-examen').forEach(btn => {
+            btn.addEventListener('click', () => editarExamen(btn.dataset.id));
+        });
+        document.querySelectorAll('.btn-resultados-examen').forEach(btn => {
+            btn.addEventListener('click', () => verResultados(btn.dataset.id));
         });
     } catch (error) {
         contenedor.innerHTML = `<div class="alert alert-danger">Error al cargar exámenes.</div>`;
@@ -143,6 +183,94 @@ document.getElementById('formExamen').addEventListener('submit', async (e) => {
         Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
     }
 });
+// ---- Editar examen ----
+async function editarExamen(id) {
+    try {
+        const respDetalle = await fetch(`${API}/examenes/${id}/detalle`);
+        if (!respDetalle.ok) throw new Error('Error al cargar examen');
+        const examen = await respDetalle.json();
+        document.getElementById('editExamenId').value = examen.id;
+        document.getElementById('editTituloExamen').value = examen.titulo;
+        const apertura = examen.fecha_apertura ? examen.fecha_apertura.substring(0, 16) : '';
+        const cierre = examen.fecha_cierre ? examen.fecha_cierre.substring(0, 16) : '';
+        document.getElementById('editFechaApertura').value = apertura;
+        document.getElementById('editFechaCierre').value = cierre;
+        document.getElementById('editTiempoLimite').value = examen.tiempo_limite_minutos;
+        const preguntasExamen = examen.preguntas || [];
+        const respPregs = await fetch(`${API}/preguntas-por-materia/${usuario.id}/${aulaMateriaId}`);
+        if (!respPregs.ok) throw new Error('Error al cargar preguntas');
+        const preguntas = await respPregs.json();
+        renderPreguntasCheckboxes('editListaPreguntas', preguntas, preguntasExamen);
+        modalEditarExamen.show();
+    } catch (error) {
+        console.error('Error en editarExamen:', error);
+        Swal.fire('Error', 'No se pudo cargar el examen para editar.', 'error');
+    }
+}
+document.getElementById('formEditarExamen').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editExamenId').value;
+    const checkboxes = document.querySelectorAll('#editListaPreguntas input[type="checkbox"]:checked');
+    const preguntas = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    const data = {
+        titulo: document.getElementById('editTituloExamen').value,
+        fecha_apertura: document.getElementById('editFechaApertura').value,
+        fecha_cierre: document.getElementById('editFechaCierre').value,
+        tiempo_limite_minutos: parseInt(document.getElementById('editTiempoLimite').value),
+        preguntas
+    };
+    try {
+        const response = await fetch(`${API}/examenes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            modalEditarExamen.hide();
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            Swal.fire('¡Actualizado!', result.message, 'success');
+            cargarExamenes();
+        } else {
+            Swal.fire('Error', result.message, 'error');
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+    }
+});
+// ---- Ver resultados ----
+async function verResultados(examenId) {
+    try {
+        const resp = await fetch(`${API}/examenes/${examenId}/resultados`);
+        if (!resp.ok) throw new Error('Error al cargar resultados');
+        const data = await resp.json();
+        const examenes = await (await fetch(`${API}/examenes/${aulaId}`)).json();
+        const examen = examenes.find(e => e.id == examenId);
+        document.getElementById('resultadosTituloExamen').textContent = examen ? examen.titulo : 'Resultados';
+        const tbody = document.getElementById('cuerpoResultados');
+        if (data.resultados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Aún no hay resultados para este examen.</td></tr>`;
+        } else {
+            tbody.innerHTML = data.resultados.map(r => `
+                <tr>
+                    <td>${r.nombre} ${r.apellido_paterno} ${r.apellido_materno || ''}</td>
+                    <td>
+                        <span class="badge ${parseFloat(r.calificacion) >= 6 ? 'bg-success' : 'bg-danger'} fs-6">
+                            ${parseFloat(r.calificacion).toFixed(1)} / 10
+                        </span>
+                    </td>
+                    <td>${new Date(r.fecha_realizacion).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+        modalResultados.show();
+    } catch (error) {
+        console.error('Error en verResultados:', error);
+        Swal.fire('Error', 'No se pudieron cargar los resultados.', 'error');
+    }
+}
 // ---- Eliminar examen ----
 function eliminarExamen(id) {
     Swal.fire({

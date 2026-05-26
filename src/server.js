@@ -381,6 +381,97 @@ apiRouter.get('/alumno/examenes-pendientes/:aula_id/:estudiante_id', (req, res) 
     });
 });
 
+// Obtener detalle completo de un examen (con preguntas asociadas)
+apiRouter.get('/examenes/:id/detalle', (req, res) => {
+    const examenId = req.params.id;
+    const queryExamen = 'SELECT * FROM Examenes WHERE id = ?';
+    db.query(queryExamen, [examenId], (err, examData) => {
+        if (err) return res.status(500).json({ message: 'Error del servidor' });
+        if (examData.length === 0) return res.status(404).json({ message: 'Examen no encontrado' });
+        const queryPreguntas = `
+            SELECT ep.pregunta_id
+            FROM Examen_Preguntas ep
+            WHERE ep.examen_id = ?
+        `;
+        db.query(queryPreguntas, [examenId], (err, preguntas) => {
+            if (err) return res.status(500).json({ message: 'Error del servidor' });
+            res.json({
+                ...examData[0],
+                preguntas: preguntas.map(p => p.pregunta_id)
+            });
+        });
+    });
+});
+
+// Actualizar examen (editar datos y/o preguntas)
+apiRouter.put('/examenes/:id', (req, res) => {
+    const examenId = req.params.id;
+    const { titulo, fecha_apertura, fecha_cierre, tiempo_limite_minutos, preguntas } = req.body;
+    const queryUpdate = 'UPDATE Examenes SET titulo = ?, fecha_apertura = ?, fecha_cierre = ?, tiempo_limite_minutos = ? WHERE id = ?';
+    db.query(queryUpdate, [titulo, fecha_apertura, fecha_cierre, tiempo_limite_minutos, examenId], (err, result) => {
+        if (err) {
+            console.error('Error al actualizar examen:', err);
+            return res.status(500).json({ message: 'Error al actualizar el examen' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Examen no encontrado' });
+        }
+        // Si se enviaron preguntas, reemplazar todas
+        if (preguntas !== undefined) {
+            const queryDelete = 'DELETE FROM Examen_Preguntas WHERE examen_id = ?';
+            db.query(queryDelete, [examenId], (err) => {
+                if (err) {
+                    console.error('Error al reemplazar preguntas:', err);
+                    return res.status(500).json({ message: 'Examen actualizado pero error al reemplazar preguntas' });
+                }
+                if (preguntas.length > 0) {
+                    const values = preguntas.map(p => [examenId, p]);
+                    const queryInsert = 'INSERT INTO Examen_Preguntas (examen_id, pregunta_id) VALUES ?';
+                    db.query(queryInsert, [values], (err) => {
+                        if (err) {
+                            console.error('Error al insertar preguntas:', err);
+                            return res.status(500).json({ message: 'Examen actualizado pero error al asignar preguntas' });
+                        }
+                        res.json({ message: 'Examen actualizado correctamente' });
+                    });
+                } else {
+                    res.json({ message: 'Examen actualizado sin preguntas' });
+                }
+            });
+        } else {
+            res.json({ message: 'Examen actualizado correctamente' });
+        }
+    });
+});
+
+// Obtener resultados de estudiantes para un examen
+apiRouter.get('/examenes/:id/resultados', (req, res) => {
+    const examenId = req.params.id;
+    const query = `
+        SELECT r.id, r.calificacion, r.fecha_realizacion,
+               u.id AS estudiante_id, u.nombre, u.apellido_paterno, u.apellido_materno
+        FROM Resultados r
+        JOIN Usuarios u ON r.estudiante_id = u.id
+        WHERE r.examen_id = ?
+        ORDER BY r.fecha_realizacion DESC
+    `;
+    db.query(query, [examenId], (err, results) => {
+        if (err) {
+            console.error('Error al obtener resultados:', err);
+            return res.status(500).json({ message: 'Error al cargar resultados' });
+        }
+        // Obtener total de preguntas del examen para contexto
+        const queryCount = 'SELECT COUNT(*) AS total FROM Examen_Preguntas WHERE examen_id = ?';
+        db.query(queryCount, [examenId], (err, countResult) => {
+            if (err) return res.status(500).json({ message: 'Error del servidor' });
+            res.json({
+                total_preguntas: countResult[0].total,
+                resultados: results
+            });
+        });
+    });
+});
+
 // Obtener preguntas de un examen (incluye tiempo límite)
 apiRouter.get('/examen/:examen_id/preguntas', (req, res) => {
     const queryExamen = 'SELECT titulo, tiempo_limite_minutos FROM Examenes WHERE id = ?';
