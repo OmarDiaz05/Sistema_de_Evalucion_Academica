@@ -61,29 +61,41 @@ function renderizarPreguntas() {
                 </div>
             `).join('');
         } else if (p.tipo === 'arrastre') {
+            const shuffled = [...opciones].sort(() => Math.random() - 0.5);
             inputHTML = `
-                <div class="arrastre-container">
-                    <div class="arrastre-opciones d-flex flex-wrap gap-2 mb-3" id="arrastre_opts_${p.id}">
-                        ${opciones.map(o => `
-                            <div class="arrastre-item card shadow-sm p-3"
-                                 draggable="true"
-                                 data-pregunta="${p.id}"
-                                 data-letra="${o.letra}"
-                                 id="drag_${p.id}_${o.letra}">
-                                <strong>${o.letra})</strong> ${o.texto}
+                <div class="arrastre-container" data-pregunta="${p.id}">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <label class="fw-bold text-muted small mb-2"><i class="bi bi-arrows-move me-1"></i>Arrastra cada opción a su posición correcta:</label>
+                            <div class="arrastre-opciones d-flex flex-wrap gap-2 mb-3 p-3 bg-light rounded-3 border" id="arrastre_opts_${p.id}" style="min-height:70px;">
+                                ${shuffled.map(o => `
+                                    <div class="arrastre-item card shadow-sm p-2 px-3"
+                                         draggable="true"
+                                         data-pregunta="${p.id}"
+                                         data-letra="${o.letra}"
+                                         id="drag_${p.id}_${o.letra}">
+                                        <span class="fw-bold">${o.letra})</span><span class="small ms-1">${o.texto}</span>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
+                            <div class="arrastre-mensaje text-center text-muted small mb-2" id="arrastre_msg_${p.id}">Arrastra cada opción a un número</div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="fw-bold text-muted small mb-2">Posiciones:</label>
+                            <div class="arrastre-posiciones d-flex flex-column gap-2" id="arrastre_pos_${p.id}">
+                                ${[1,2,3,4].map(n => `
+                                    <div class="arrastre-zona-drop border rounded-3 p-3 bg-white d-flex align-items-center"
+                                         data-pos="${n}" data-pregunta="${p.id}" id="dropzone_${p.id}_${n}">
+                                        <span class="badge bg-dark me-2 fs-6">${n}</span>
+                                        <span class="arrastre-slot text-muted small flex-grow-1" id="slot_${p.id}_${n}">Vacío</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     </div>
-                    <div class="arrastre-zona-drop border rounded-4 p-4 text-center bg-light"
-                         id="dropzone_${p.id}"
-                         data-pregunta="${p.id}">
-                        <i class="bi bi-arrow-down-circle display-6 text-muted"></i>
-                        <p class="text-muted mb-0">Arrastra tu respuesta aquí</p>
-                        <div class="arrastre-seleccionado mt-2" id="seleccion_${p.id}"></div>
-                        <input type="hidden" class="input-respuesta" data-pregunta="${p.id}" id="hidden_${p.id}" value="">
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary mt-2 btn-limpiar-arrastre" data-pregunta="${p.id}" style="display:none;">
-                        <i class="bi bi-x-circle"></i> Limpiar selección
+                    <input type="hidden" class="input-respuesta" data-pregunta="${p.id}" id="hidden_${p.id}" value="">
+                    <button class="btn btn-sm btn-outline-secondary mt-2 btn-limpiar-arrastre" data-pregunta="${p.id}">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
                     </button>
                 </div>`;
         } else {
@@ -119,7 +131,7 @@ function guardarRespuesta(e) {
     respuestas[preguntaId] = valor;
 }
 
-// ---- Drag & Drop para preguntas tipo arrastre ----
+// ---- Drag & Drop para preguntas tipo arrastre (matching) ----
 function iniciarDragDrop() {
     document.querySelectorAll('.arrastre-item').forEach(item => {
         item.addEventListener('dragstart', (e) => {
@@ -146,33 +158,62 @@ function iniciarDragDrop() {
             zona.classList.remove('arrastre-over');
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const preguntaId = parseInt(zona.dataset.pregunta);
+            const pos = parseInt(zona.dataset.pos);
             const letra = data.letra;
             const itemOrig = document.getElementById(`drag_${preguntaId}_${letra}`);
-            if (itemOrig) {
-                const texto = itemOrig.textContent.trim();
-                document.getElementById(`seleccion_${preguntaId}`).innerHTML =
-                    `<span class="badge bg-primary fs-5 p-2">${texto}</span>`;
-                document.getElementById(`hidden_${preguntaId}`).value = letra;
-                respuestas[preguntaId] = letra;
-                document.querySelector(`.btn-limpiar-arrastre[data-pregunta="${preguntaId}"]`).style.display = 'inline-block';
-                // Ocultar el item original
-                itemOrig.style.display = 'none';
+            if (!itemOrig) return;
+            // Si el item ya está en una posición, removerlo de ahí
+            document.querySelectorAll(`#arrastre_pos_${preguntaId} .arrastre-zona-drop`).forEach(z => {
+                const slot = z.querySelector('.arrastre-slot');
+                if (slot.dataset.letra === letra) {
+                    slot.innerHTML = 'Vacío';
+                    slot.className = 'arrastre-slot text-muted small flex-grow-1';
+                    delete slot.dataset.letra;
+                }
+            });
+            // Si la zona ya tiene un item, devolverlo a opciones
+            const slotTarget = document.getElementById(`slot_${preguntaId}_${pos}`);
+            if (slotTarget.dataset.letra) {
+                const oldLetra = slotTarget.dataset.letra;
+                const oldItem = document.getElementById(`drag_${preguntaId}_${oldLetra}`);
+                if (oldItem) oldItem.style.display = '';
             }
+            // Colocar item en la zona
+            itemOrig.style.display = 'none';
+            slotTarget.innerHTML = `<span class="fw-bold text-primary">${letra}) ${itemOrig.querySelector('span:last-child')?.textContent || itemOrig.textContent.replace(/^\w\)/, '').trim()}</span>`;
+            slotTarget.className = 'arrastre-slot fw-bold flex-grow-1';
+            slotTarget.dataset.letra = letra;
+            actualizarRespuestaArrastre(preguntaId);
         });
     });
     document.querySelectorAll('.btn-limpiar-arrastre').forEach(btn => {
         btn.addEventListener('click', () => {
             const preguntaId = btn.dataset.pregunta;
-            document.getElementById(`seleccion_${preguntaId}`).innerHTML = '';
-            document.getElementById(`hidden_${preguntaId}`).value = '';
-            delete respuestas[parseInt(preguntaId)];
-            btn.style.display = 'none';
-            // Restaurar items
-            document.querySelectorAll(`#arrastre_opts_${preguntaId} .arrastre-item`).forEach(item => {
-                item.style.display = '';
+            // Devolver todos los items a opciones
+            document.querySelectorAll(`#arrastre_pos_${preguntaId} .arrastre-slot`).forEach(slot => {
+                if (slot.dataset.letra) {
+                    const item = document.getElementById(`drag_${preguntaId}_${slot.dataset.letra}`);
+                    if (item) item.style.display = '';
+                }
+                slot.innerHTML = 'Vacío';
+                slot.className = 'arrastre-slot text-muted small flex-grow-1';
+                delete slot.dataset.letra;
             });
+            document.getElementById(`hidden_${preguntaId}`).value = '';
+            delete respuestas[preguntaId];
         });
     });
+}
+
+function actualizarRespuestaArrastre(preguntaId) {
+    const valores = [];
+    for (let i = 1; i <= 4; i++) {
+        const slot = document.getElementById(`slot_${preguntaId}_${i}`);
+        valores.push(slot.dataset.letra || '');
+    }
+    const respuesta = valores.join(',');
+    document.getElementById(`hidden_${preguntaId}`).value = respuesta;
+    respuestas[preguntaId] = respuesta;
 }
 
 // ---- Temporizador ----
@@ -238,7 +279,7 @@ async function entregarExamen(porTiempo) {
         respuesta_dada: String(respuesta_dada)
     }));
 
-    const tiempoTomado = Math.floor((totalSegundos - segundosRestantes) / 60);
+    const tiempoTomado = totalSegundos - segundosRestantes;
 
     try {
         const response = await fetch(`${API}/examen/entregar`, {

@@ -258,13 +258,30 @@ apiRouter.put('/preguntas/:id', (req, res) => {
 // Eliminar pregunta
 apiRouter.delete('/preguntas/:id', (req, res) => {
     const preguntaId = req.params.id;
-    const query = 'DELETE FROM Preguntas WHERE id = ?';
-    db.query(query, [preguntaId], (err, results) => {
+    const deleteExamenPreguntas = 'DELETE FROM Examen_Preguntas WHERE pregunta_id = ?';
+    db.query(deleteExamenPreguntas, [preguntaId], (err) => {
         if (err) {
-            console.error('Error al eliminar pregunta:', err);
+            console.error('Error al eliminar referencia en examen_preguntas:', err);
             return res.status(500).json({ message: 'Error al eliminar la pregunta' });
         }
-        res.json({ message: 'Pregunta eliminada' });
+        const deletePregunta = 'DELETE FROM Preguntas WHERE id = ?';
+        db.query(deletePregunta, [preguntaId], (err, results) => {
+            if (err) {
+                console.error('Error al eliminar pregunta:', err);
+                return res.status(500).json({ message: 'Error al eliminar la pregunta' });
+            }
+            res.json({ message: 'Pregunta eliminada' });
+        });
+    });
+});
+
+// Actualizar nombre de un aula
+apiRouter.put('/aula-detalle/:aula_id', (req, res) => {
+    const { nombre } = req.body;
+    if (!nombre) return res.status(400).json({ message: 'Falta el nombre' });
+    db.query('UPDATE Aulas SET nombre = ? WHERE id = ?', [nombre, req.params.aula_id], (err) => {
+        if (err) return res.status(500).json({ message: 'Error al actualizar aula' });
+        res.json({ message: 'Aula actualizada' });
     });
 });
 
@@ -448,7 +465,7 @@ apiRouter.put('/examenes/:id', (req, res) => {
 apiRouter.get('/examenes/:id/resultados', (req, res) => {
     const examenId = req.params.id;
     const query = `
-        SELECT r.id, r.calificacion, r.fecha_realizacion,
+        SELECT r.id, r.calificacion, r.fecha_realizacion, r.tiempo_tomado,
                u.id AS estudiante_id, u.nombre, u.apellido_paterno, u.apellido_materno
         FROM Resultados r
         JOIN Usuarios u ON r.estudiante_id = u.id
@@ -522,7 +539,7 @@ apiRouter.post('/examen/entregar', (req, res) => {
             };
         });
         const calificacion = (correctas / preguntas.length) * 10;
-        const tiempoFinal = tiempo_tomado || null;
+        const tiempoFinal = tiempo_tomado != null ? tiempo_tomado : null;
         const queryResultado = 'INSERT INTO Resultados (examen_id, estudiante_id, calificacion, tiempo_tomado) VALUES (?, ?, ?, ?)';
         db.query(queryResultado, [examen_id, estudiante_id, calificacion, tiempoFinal], (err, result) => {
             if (err) return res.status(500).json({ message: 'Error al guardar resultado' });

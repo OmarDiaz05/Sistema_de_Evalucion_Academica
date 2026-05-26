@@ -49,7 +49,8 @@ async function cargarHistorial() {
                                 <tbody>
                                     ${aula.examenes.map(ex => {
                                         const pct = ex.total_preguntas > 0 ? Math.round((ex.correctas / ex.total_preguntas) * 100) : 0;
-                                        const tiempo = ex.tiempo_tomado ? `${ex.tiempo_tomado} min` : '-';
+                                        const t = ex.tiempo_tomado;
+                                        const tiempo = t ? `${Math.floor(t / 60)}m ${t % 60}s` : '-';
                                         return `
                                             <tr>
                                                 <td class="fw-medium">${ex.titulo}</td>

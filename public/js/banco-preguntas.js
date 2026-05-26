@@ -11,12 +11,13 @@ document.getElementById('tipo').addEventListener('change', function () {
     const esArrastre = this.value === 'arrastre';
     const mostrarOpciones = esMultiple || esArrastre;
     document.getElementById('opcionesContainer').style.display = mostrarOpciones ? 'flex' : 'none';
-    document.getElementById('respuesta_correcta_select').style.display = mostrarOpciones ? 'block' : 'none';
-    document.getElementById('respuesta_correcta_text').style.display = mostrarOpciones ? 'none' : 'block';
+    document.getElementById('ordenArrastreContainer').style.display = esArrastre ? 'block' : 'none';
+    document.getElementById('respuesta_correcta_select').style.display = esMultiple ? 'block' : 'none';
+    document.getElementById('respuesta_correcta_text').style.display = (!esMultiple && !esArrastre) ? 'block' : 'none';
     if (esMultiple) {
         document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
     } else if (esArrastre) {
-        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta (arrastrar)';
+        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
     } else {
         document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta (texto)';
     }
@@ -36,9 +37,18 @@ document.getElementById('btnNuevaPregunta').addEventListener('click', () => {
 document.getElementById('formPregunta').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipo').value;
-    const respuestaCorrecta = (tipo === 'opcion_multiple' || tipo === 'arrastre')
-        ? document.getElementById('respuesta_correcta_select').value
-        : document.getElementById('respuesta_correcta_text').value;
+    let respuestaCorrecta;
+    if (tipo === 'arrastre') {
+        const pos1 = document.getElementById('orden_pos_1').value;
+        const pos2 = document.getElementById('orden_pos_2').value;
+        const pos3 = document.getElementById('orden_pos_3').value;
+        const pos4 = document.getElementById('orden_pos_4').value;
+        respuestaCorrecta = [pos1, pos2, pos3, pos4].join(',');
+    } else if (tipo === 'opcion_multiple') {
+        respuestaCorrecta = document.getElementById('respuesta_correcta_select').value;
+    } else {
+        respuestaCorrecta = document.getElementById('respuesta_correcta_text').value;
+    }
     const data = {
         materia_id: document.getElementById('materia_id').value,
         docente_id: usuario.id,
@@ -72,71 +82,100 @@ document.getElementById('formPregunta').addEventListener('submit', async (e) => 
         Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
     }
 });
+let todasPreguntas = [];
+
+function renderPreguntas(lista) {
+    const contenedor = document.getElementById('contenedorPreguntas');
+    contenedor.innerHTML = '';
+    if (lista.length === 0) {
+        contenedor.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-secondary text-center rounded-4 p-5">
+                    <i class="bi bi-journal-x display-4 d-block mb-3 text-muted"></i>
+                    <p class="mb-0 fs-5">No hay preguntas para esta materia.</p>
+                </div>
+            </div>`;
+        return;
+    }
+    lista.forEach(p => {
+        const badgeColor = p.tipo === 'opcion_multiple' ? 'bg-primary' : 'bg-warning text-dark';
+        const tipoTexto = p.tipo === 'opcion_multiple' ? 'Opción Múltiple' : 'Arrastrar';
+        let opcionesHTML;
+        if (p.tipo === 'opcion_multiple') {
+            opcionesHTML = `<div class="mt-2">
+                   ${['A', 'B', 'C', 'D'].filter(l => p[`opcion_${l.toLowerCase()}`]).map(l =>
+                       `<span class="opcion-item ${p.respuesta_correcta === l ? 'bg-success text-white' : 'bg-light'} me-1">
+                            ${l}) ${p[`opcion_${l.toLowerCase()}`]}
+                        </span>`
+                   ).join('')}
+               </div>`;
+        } else if (p.tipo === 'arrastre') {
+            const items = ['A','B','C','D'].filter(l => p[`opcion_${l.toLowerCase()}`]);
+            const posiciones = p.respuesta_correcta ? p.respuesta_correcta.split(',') : ['A','B','C','D'];
+            opcionesHTML = `<div class="mt-2">
+                <small class="text-muted fw-bold d-block mb-1"><i class="bi bi-arrows-move me-1"></i>Orden correcto:</small>
+                <div class="d-flex flex-wrap gap-1">
+                ${posiciones.map((letra, idx) => {
+                    const txt = p[`opcion_${letra.toLowerCase()}`];
+                    return `<span class="badge bg-dark me-1">${idx+1}. ${letra}) ${txt}</span>`;
+                }).join('')}
+                </div>
+            </div>`;
+        } else {
+            opcionesHTML = `<div class="mt-2 text-muted small">
+                   <i class="bi bi-arrows-move me-1"></i> Respuesta: ${p.respuesta_correcta}
+               </div>`;
+        }
+        const tarjeta = `
+            <div class="col-md-6 mb-3">
+                <div class="card card-pregunta shadow-sm h-100 p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge badge-tipo ${badgeColor}">${tipoTexto}</span>
+                        <span class="badge bg-secondary">${p.materia_nombre}</span>
+                    </div>
+                    <p class="pregunta-texto fw-semibold mb-2">${p.texto_pregunta}</p>
+                    ${opcionesHTML}
+                    <div class="mt-2 text-muted small">
+                        <i class="bi bi-book me-1"></i>${p.tema_retroalimentacion}
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm fw-bold btn-editar" data-id="${p.id}">
+                            <i class="bi bi-pencil"></i> Editar
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm fw-bold btn-eliminar" data-id="${p.id}">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        contenedor.innerHTML += tarjeta;
+    });
+    document.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', () => editarPregunta(btn.dataset.id));
+    });
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', () => eliminarPregunta(btn.dataset.id));
+    });
+}
+
 // ---- Cargar preguntas ----
 async function cargarPreguntas() {
-    const contenedor = document.getElementById('contenedorPreguntas');
     try {
         const response = await fetch(`${API}/preguntas/${usuario.id}`);
-        const preguntas = await response.json();
-        contenedor.innerHTML = '';
-        if (preguntas.length === 0) {
-            contenedor.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-secondary text-center rounded-4 p-5">
-                        <i class="bi bi-journal-x display-4 d-block mb-3 text-muted"></i>
-                        <p class="mb-0 fs-5">Aún no tienes preguntas registradas. ¡Crea tu primera pregunta!</p>
-                    </div>
-                </div>`;
-            return;
-        }
-        preguntas.forEach(p => {
-            const badgeColor = p.tipo === 'opcion_multiple' ? 'bg-primary' : 'bg-warning text-dark';
-            const tipoTexto = p.tipo === 'opcion_multiple' ? 'Opción Múltiple' : 'Arrastrar';
-            const opcionesHTML = p.tipo === 'opcion_multiple'
-                ? `<div class="mt-2">
-                       ${['A', 'B', 'C', 'D'].filter(l => p[`opcion_${l.toLowerCase()}`]).map(l =>
-                           `<span class="opcion-item ${p.respuesta_correcta === l ? 'bg-success text-white' : 'bg-light'} me-1">
-                                ${l}) ${p[`opcion_${l.toLowerCase()}`]}
-                            </span>`
-                       ).join('')}
-                   </div>`
-                : `<div class="mt-2 text-muted small">
-                       <i class="bi bi-arrows-move me-1"></i> Respuesta: ${p.respuesta_correcta}
-                   </div>`;
-            const tarjeta = `
-                <div class="col-md-6 mb-3">
-                    <div class="card card-pregunta shadow-sm h-100 p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge badge-tipo ${badgeColor}">${tipoTexto}</span>
-                            <span class="badge bg-secondary">${p.materia_nombre}</span>
-                        </div>
-                        <p class="pregunta-texto fw-semibold mb-2">${p.texto_pregunta}</p>
-                        ${opcionesHTML}
-                        <div class="mt-2 text-muted small">
-                            <i class="bi bi-book me-1"></i>${p.tema_retroalimentacion}
-                        </div>
-                        <div class="mt-3 d-flex gap-2">
-                            <button class="btn btn-outline-primary btn-sm fw-bold btn-editar" data-id="${p.id}">
-                                <i class="bi bi-pencil"></i> Editar
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm fw-bold btn-eliminar" data-id="${p.id}">
-                                <i class="bi bi-trash"></i> Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            contenedor.innerHTML += tarjeta;
-        });
-        document.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', () => editarPregunta(btn.dataset.id));
-        });
-        document.querySelectorAll('.btn-eliminar').forEach(btn => {
-            btn.addEventListener('click', () => eliminarPregunta(btn.dataset.id));
-        });
+        todasPreguntas = await response.json();
+        aplicarFiltro();
     } catch (error) {
-        contenedor.innerHTML = `<div class="alert alert-danger">Error al cargar preguntas.</div>`;
+        document.getElementById('contenedorPreguntas').innerHTML = `<div class="alert alert-danger">Error al cargar preguntas.</div>`;
     }
 }
+
+function aplicarFiltro() {
+    const materiaId = document.getElementById('filtroMateria').value;
+    const filtradas = materiaId === 'todas' ? todasPreguntas : todasPreguntas.filter(p => p.materia_id == materiaId);
+    renderPreguntas(filtradas);
+}
+
+document.getElementById('filtroMateria').addEventListener('change', aplicarFiltro);
 // ---- Editar ----
 async function editarPregunta(id) {
     try {
@@ -155,11 +194,19 @@ async function editarPregunta(id) {
         document.getElementById('opcion_c').value = p.opcion_c || '';
         document.getElementById('opcion_d').value = p.opcion_d || '';
         document.getElementById('tema_retroalimentacion').value = p.tema_retroalimentacion;
-        const tieneOpciones = p.tipo === 'opcion_multiple' || p.tipo === 'arrastre';
-        document.getElementById('opcionesContainer').style.display = tieneOpciones ? 'flex' : 'none';
-        document.getElementById('respuesta_correcta_select').style.display = tieneOpciones ? 'block' : 'none';
-        document.getElementById('respuesta_correcta_text').style.display = tieneOpciones ? 'none' : 'block';
-        if (tieneOpciones) {
+        const esArrastre = p.tipo === 'arrastre';
+        const esMultiple = p.tipo === 'opcion_multiple';
+        document.getElementById('opcionesContainer').style.display = (esMultiple || esArrastre) ? 'flex' : 'none';
+        document.getElementById('ordenArrastreContainer').style.display = esArrastre ? 'block' : 'none';
+        document.getElementById('respuesta_correcta_select').style.display = esMultiple ? 'block' : 'none';
+        document.getElementById('respuesta_correcta_text').style.display = (!esMultiple && !esArrastre) ? 'block' : 'none';
+        if (esArrastre) {
+            const orden = p.respuesta_correcta ? p.respuesta_correcta.split(',') : ['','','',''];
+            document.getElementById('orden_pos_1').value = orden[0] || '';
+            document.getElementById('orden_pos_2').value = orden[1] || '';
+            document.getElementById('orden_pos_3').value = orden[2] || '';
+            document.getElementById('orden_pos_4').value = orden[3] || '';
+        } else if (esMultiple) {
             document.getElementById('respuesta_correcta_select').value = p.respuesta_correcta;
         } else {
             document.getElementById('respuesta_correcta_text').value = p.respuesta_correcta;

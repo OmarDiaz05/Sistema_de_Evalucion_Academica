@@ -252,9 +252,12 @@ async function verResultados(examenId) {
         document.getElementById('resultadosTituloExamen').textContent = examen ? examen.titulo : 'Resultados';
         const tbody = document.getElementById('cuerpoResultados');
         if (data.resultados.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Aún no hay resultados para este examen.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Aún no hay resultados para este examen.</td></tr>`;
         } else {
-            tbody.innerHTML = data.resultados.map(r => `
+            tbody.innerHTML = data.resultados.map(r => {
+                const t = r.tiempo_tomado;
+                const tiempo = t ? `${Math.floor(t / 60)}m ${t % 60}s` : '-';
+                return `
                 <tr>
                     <td>${r.nombre} ${r.apellido_paterno} ${r.apellido_materno || ''}</td>
                     <td>
@@ -262,9 +265,10 @@ async function verResultados(examenId) {
                             ${parseFloat(r.calificacion).toFixed(1)} / 10
                         </span>
                     </td>
+                    <td>${tiempo}</td>
                     <td>${new Date(r.fecha_realizacion).toLocaleString()}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
         modalResultados.show();
     } catch (error) {
@@ -411,7 +415,8 @@ async function verEstadisticas(estudianteId, nombre) {
         } else {
             tbody.innerHTML = data.examenes.map(ex => {
                 if (ex.completado) {
-                    const tiempo = ex.tiempo_tomado ? `${Math.floor(ex.tiempo_tomado / 60)}:${String(ex.tiempo_tomado % 60).padStart(2, '0')} min` : '-';
+                    const t = ex.tiempo_tomado;
+                    const tiempo = t ? `${Math.floor(t / 60)}m ${t % 60}s` : '-';
                     return `
                         <tr>
                             <td>${ex.titulo}</td>
