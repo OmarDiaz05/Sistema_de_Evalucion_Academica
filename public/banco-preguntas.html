@@ -106,47 +106,60 @@
                                 <input id="respuesta_correcta_text" class="form-control" placeholder="Escribe la respuesta correcta" style="display:none;">
                             </div>
                             <div class="col-md-6" id="ordenArrastreContainer" style="display:none;">
-                                <label class="form-label fw-bold">Orden correcto (arrastrar)</label>
-                                <div class="row g-1">
-                                    <div class="col-6 mb-1">
-                                        <small class="text-muted">Posición 1</small>
-                                        <select id="orden_pos_1" class="form-select form-select-sm">
-                                            <option value="">--</option>
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="C">C</option>
-                                            <option value="D">D</option>
-                                        </select>
+                                <label class="form-label fw-bold">Relación (arrastrar)</label>
+                                <p class="text-muted small mb-2">Escribe cada objetivo y selecciona qué opción (A–D) le corresponde:</p>
+                                <div id="arrastreTargetsContainer">
+                                    <div class="mb-2 p-2 border rounded-3 bg-light">
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">1</span>
+                                            <input id="target_1" class="form-control form-control-sm" placeholder="Ej. Absorbe agua y minerales">
+                                            <select id="match_1" class="form-select form-select-sm" style="max-width:80px;">
+                                                <option value="">--</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                                <option value="D">D</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="col-6 mb-1">
-                                        <small class="text-muted">Posición 2</small>
-                                        <select id="orden_pos_2" class="form-select form-select-sm">
-                                            <option value="">--</option>
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="C">C</option>
-                                            <option value="D">D</option>
-                                        </select>
+                                    <div class="mb-2 p-2 border rounded-3 bg-light">
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">2</span>
+                                            <input id="target_2" class="form-control form-control-sm" placeholder="Ej. Produce alimento">
+                                            <select id="match_2" class="form-select form-select-sm" style="max-width:80px;">
+                                                <option value="">--</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                                <option value="D">D</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="col-6 mb-1">
-                                        <small class="text-muted">Posición 3</small>
-                                        <select id="orden_pos_3" class="form-select form-select-sm">
-                                            <option value="">--</option>
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="C">C</option>
-                                            <option value="D">D</option>
-                                        </select>
+                                    <div class="mb-2 p-2 border rounded-3 bg-light">
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">3</span>
+                                            <input id="target_3" class="form-control form-control-sm" placeholder="Ej. Transporta nutrientes">
+                                            <select id="match_3" class="form-select form-select-sm" style="max-width:80px;">
+                                                <option value="">--</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                                <option value="D">D</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="col-6 mb-1">
-                                        <small class="text-muted">Posición 4</small>
-                                        <select id="orden_pos_4" class="form-select form-select-sm">
-                                            <option value="">--</option>
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="C">C</option>
-                                            <option value="D">D</option>
-                                        </select>
+                                    <div class="mb-2 p-2 border rounded-3 bg-light">
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">4</span>
+                                            <input id="target_4" class="form-control form-control-sm" placeholder="Ej. Reproducción">
+                                            <select id="match_4" class="form-select form-select-sm" style="max-width:80px;">
+                                                <option value="">--</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                                <option value="D">D</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

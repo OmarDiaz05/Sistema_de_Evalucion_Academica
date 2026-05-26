@@ -58,6 +58,21 @@ body {
     border-style: solid;
     transform: scale(1.02);
 }
+.arrastre-zona-drop.arrastre-correcto {
+    background: #d4edda !important;
+    border-color: #28a745;
+    border-style: solid;
+}
+.arrastre-zona-drop.arrastre-incorrecto {
+    background: #f8d7da !important;
+    border-color: #dc3545;
+    border-style: solid;
+}
+.arrastre-target-label {
+    font-size: 0.85rem;
+    max-width: 140px;
+    line-height: 1.3;
+}
 @media (max-width: 768px) {
     .card .card-body {
         padding: 1rem !important;
@@ -65,5 +80,9 @@ body {
     #timerDisplay {
         font-size: 0.85rem;
         padding: 4px 10px;
+    }
+    .arrastre-target-label {
+        font-size: 0.75rem;
+        max-width: 90px;
     }
 }

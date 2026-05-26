@@ -17,7 +17,7 @@ document.getElementById('tipo').addEventListener('change', function () {
     if (esMultiple) {
         document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
     } else if (esArrastre) {
-        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
+        document.getElementById('labelRespuesta').textContent = 'Relación de columnas';
     } else {
         document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta (texto)';
     }
@@ -31,19 +31,26 @@ document.getElementById('btnNuevaPregunta').addEventListener('click', () => {
     document.getElementById('opcionesContainer').style.display = 'flex';
     document.getElementById('respuesta_correcta_select').style.display = 'block';
     document.getElementById('respuesta_correcta_text').style.display = 'none';
+    document.getElementById('ordenArrastreContainer').style.display = 'none';
+    document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
     modalPregunta.show();
 });
 // ---- Guardar (crear o editar) ----
 document.getElementById('formPregunta').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipo').value;
-    let respuestaCorrecta;
+    let respuestaCorrecta, arrastre_targets;
     if (tipo === 'arrastre') {
-        const pos1 = document.getElementById('orden_pos_1').value;
-        const pos2 = document.getElementById('orden_pos_2').value;
-        const pos3 = document.getElementById('orden_pos_3').value;
-        const pos4 = document.getElementById('orden_pos_4').value;
-        respuestaCorrecta = [pos1, pos2, pos3, pos4].join(',');
+        const t1 = document.getElementById('target_1').value;
+        const t2 = document.getElementById('target_2').value;
+        const t3 = document.getElementById('target_3').value;
+        const t4 = document.getElementById('target_4').value;
+        const m1 = document.getElementById('match_1').value;
+        const m2 = document.getElementById('match_2').value;
+        const m3 = document.getElementById('match_3').value;
+        const m4 = document.getElementById('match_4').value;
+        arrastre_targets = JSON.stringify([t1, t2, t3, t4]);
+        respuestaCorrecta = [m1, m2, m3, m4].join(',');
     } else if (tipo === 'opcion_multiple') {
         respuestaCorrecta = document.getElementById('respuesta_correcta_select').value;
     } else {
@@ -59,7 +66,8 @@ document.getElementById('formPregunta').addEventListener('submit', async (e) => 
         opcion_c: document.getElementById('opcion_c').value,
         opcion_d: document.getElementById('opcion_d').value,
         respuesta_correcta: respuestaCorrecta,
-        tema_retroalimentacion: document.getElementById('tema_retroalimentacion').value
+        tema_retroalimentacion: document.getElementById('tema_retroalimentacion').value,
+        arrastre_targets: arrastre_targets
     };
     try {
         const id = document.getElementById('preguntaId').value;
@@ -110,14 +118,22 @@ function renderPreguntas(lista) {
                    ).join('')}
                </div>`;
         } else if (p.tipo === 'arrastre') {
-            const items = ['A','B','C','D'].filter(l => p[`opcion_${l.toLowerCase()}`]);
-            const posiciones = p.respuesta_correcta ? p.respuesta_correcta.split(',') : ['A','B','C','D'];
+            let targets = ['','','',''];
+            try { targets = JSON.parse(p.arrastre_targets) || targets; } catch(e) {}
+            const orden = p.respuesta_correcta ? p.respuesta_correcta.split(',') : [];
             opcionesHTML = `<div class="mt-2">
-                <small class="text-muted fw-bold d-block mb-1"><i class="bi bi-arrows-move me-1"></i>Orden correcto:</small>
-                <div class="d-flex flex-wrap gap-1">
-                ${posiciones.map((letra, idx) => {
-                    const txt = p[`opcion_${letra.toLowerCase()}`];
-                    return `<span class="badge bg-dark me-1">${idx+1}. ${letra}) ${txt}</span>`;
+                <small class="text-muted fw-bold d-block mb-1"><i class="bi bi-arrows-move me-1"></i>Relación correcta:</small>
+                <div class="d-flex flex-column gap-1">
+                ${targets.map((t, idx) => {
+                    if (!t) return '';
+                    const letra = orden[idx] || '';
+                    const itemTxt = p[`opcion_${letra.toLowerCase()}`] || '';
+                    return `<div class="d-flex align-items-center gap-2 small">
+                        <span class="badge bg-dark rounded-circle" style="min-width:22px;">${idx+1}</span>
+                        <span class="flex-grow-1">${t}</span>
+                        <i class="bi bi-arrow-right text-primary"></i>
+                        <span class="badge bg-success">${letra}) ${itemTxt}</span>
+                    </div>`;
                 }).join('')}
                 </div>
             </div>`;
@@ -201,11 +217,17 @@ async function editarPregunta(id) {
         document.getElementById('respuesta_correcta_select').style.display = esMultiple ? 'block' : 'none';
         document.getElementById('respuesta_correcta_text').style.display = (!esMultiple && !esArrastre) ? 'block' : 'none';
         if (esArrastre) {
+            let targets = ['','','',''];
+            try { targets = JSON.parse(p.arrastre_targets) || targets; } catch(e) {}
+            document.getElementById('target_1').value = targets[0] || '';
+            document.getElementById('target_2').value = targets[1] || '';
+            document.getElementById('target_3').value = targets[2] || '';
+            document.getElementById('target_4').value = targets[3] || '';
             const orden = p.respuesta_correcta ? p.respuesta_correcta.split(',') : ['','','',''];
-            document.getElementById('orden_pos_1').value = orden[0] || '';
-            document.getElementById('orden_pos_2').value = orden[1] || '';
-            document.getElementById('orden_pos_3').value = orden[2] || '';
-            document.getElementById('orden_pos_4').value = orden[3] || '';
+            document.getElementById('match_1').value = orden[0] || '';
+            document.getElementById('match_2').value = orden[1] || '';
+            document.getElementById('match_3').value = orden[2] || '';
+            document.getElementById('match_4').value = orden[3] || '';
         } else if (esMultiple) {
             document.getElementById('respuesta_correcta_select').value = p.respuesta_correcta;
         } else {

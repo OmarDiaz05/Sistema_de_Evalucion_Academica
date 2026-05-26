@@ -61,42 +61,49 @@ function renderizarPreguntas() {
                 </div>
             `).join('');
         } else if (p.tipo === 'arrastre') {
+            let targets = ['','','',''];
+            try { targets = JSON.parse(p.arrastre_targets) || targets; } catch(e) {}
+            const hasTargets = targets.some(t => t);
             const shuffled = [...opciones].sort(() => Math.random() - 0.5);
+            const letrasColor = { A:'primary', B:'success', C:'danger', D:'warning text-dark' };
             inputHTML = `
                 <div class="arrastre-container" data-pregunta="${p.id}">
-                    <div class="row">
-                        <div class="col-md-7">
-                            <label class="fw-bold text-muted small mb-2"><i class="bi bi-arrows-move me-1"></i>Arrastra cada opción a su posición correcta:</label>
-                            <div class="arrastre-opciones d-flex flex-wrap gap-2 mb-3 p-3 bg-light rounded-3 border" id="arrastre_opts_${p.id}" style="min-height:70px;">
+                    <p class="text-muted small mb-3"><i class="bi bi-arrows-move me-1"></i>${hasTargets ? 'Arrastra cada elemento a su descripción correcta' : 'Arrastra cada opción a su posición correcta'}:</p>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <div class="arrastre-opciones d-flex flex-wrap gap-2 p-3 bg-light rounded-3 border" id="arrastre_opts_${p.id}">
                                 ${shuffled.map(o => `
-                                    <div class="arrastre-item card shadow-sm p-2 px-3"
+                                    <div class="arrastre-item card border-0 shadow-sm p-2 px-3"
                                          draggable="true"
                                          data-pregunta="${p.id}"
                                          data-letra="${o.letra}"
                                          id="drag_${p.id}_${o.letra}">
-                                        <span class="fw-bold">${o.letra})</span><span class="small ms-1">${o.texto}</span>
+                                        <span class="badge bg-${letrasColor[o.letra]} rounded-pill me-1">${o.letra}</span>
+                                        <span class="small">${o.texto}</span>
                                     </div>
                                 `).join('')}
                             </div>
-                            <div class="arrastre-mensaje text-center text-muted small mb-2" id="arrastre_msg_${p.id}">Arrastra cada opción a un número</div>
+                            <div class="text-center text-muted small mt-2" id="arrastre_msg_${p.id}">⟵ Elementos</div>
                         </div>
-                        <div class="col-md-5">
-                            <label class="fw-bold text-muted small mb-2">Posiciones:</label>
+                        <div class="col-md-7">
                             <div class="arrastre-posiciones d-flex flex-column gap-2" id="arrastre_pos_${p.id}">
-                                ${[1,2,3,4].map(n => `
-                                    <div class="arrastre-zona-drop border rounded-3 p-3 bg-white d-flex align-items-center"
+                                ${[1,2,3,4].map(n => {
+                                    const label = hasTargets ? (targets[n-1] || `Posición ${n}`) : `Posición ${n}`;
+                                    return `
+                                    <div class="arrastre-zona-drop border-2 rounded-3 p-3 bg-white d-flex align-items-center"
                                          data-pos="${n}" data-pregunta="${p.id}" id="dropzone_${p.id}_${n}">
-                                        <span class="badge bg-dark me-2 fs-6">${n}</span>
+                                        <span class="badge bg-dark rounded-circle me-2" style="min-width:28px;">${n}</span>
+                                        <span class="arrastre-target-label small fw-semibold text-secondary me-2 flex-shrink-0">${label}</span>
                                         <span class="arrastre-slot text-muted small flex-grow-1" id="slot_${p.id}_${n}">Vacío</span>
-                                    </div>
-                                `).join('')}
+                                    </div>`;
+                                }).join('')}
                             </div>
+                            <button class="btn btn-sm btn-outline-secondary mt-2 w-100 btn-limpiar-arrastre" data-pregunta="${p.id}">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+                            </button>
                         </div>
                     </div>
                     <input type="hidden" class="input-respuesta" data-pregunta="${p.id}" id="hidden_${p.id}" value="">
-                    <button class="btn btn-sm btn-outline-secondary mt-2 btn-limpiar-arrastre" data-pregunta="${p.id}">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
-                    </button>
                 </div>`;
         } else {
             inputHTML = `
@@ -162,7 +169,6 @@ function iniciarDragDrop() {
             const letra = data.letra;
             const itemOrig = document.getElementById(`drag_${preguntaId}_${letra}`);
             if (!itemOrig) return;
-            // Si el item ya está en una posición, removerlo de ahí
             document.querySelectorAll(`#arrastre_pos_${preguntaId} .arrastre-zona-drop`).forEach(z => {
                 const slot = z.querySelector('.arrastre-slot');
                 if (slot.dataset.letra === letra) {
@@ -171,16 +177,16 @@ function iniciarDragDrop() {
                     delete slot.dataset.letra;
                 }
             });
-            // Si la zona ya tiene un item, devolverlo a opciones
             const slotTarget = document.getElementById(`slot_${preguntaId}_${pos}`);
             if (slotTarget.dataset.letra) {
                 const oldLetra = slotTarget.dataset.letra;
                 const oldItem = document.getElementById(`drag_${preguntaId}_${oldLetra}`);
                 if (oldItem) oldItem.style.display = '';
             }
-            // Colocar item en la zona
             itemOrig.style.display = 'none';
-            slotTarget.innerHTML = `<span class="fw-bold text-primary">${letra}) ${itemOrig.querySelector('span:last-child')?.textContent || itemOrig.textContent.replace(/^\w\)/, '').trim()}</span>`;
+            const label = zona.querySelector('.arrastre-target-label');
+            const labelText = label ? label.textContent : '';
+            slotTarget.innerHTML = `<span class="fw-bold text-primary"><span class="badge bg-primary rounded-pill me-1">${letra}</span> ${itemOrig.querySelector('span:last-child')?.textContent || itemOrig.textContent.replace(/^.*?[\)]\s*/, '').trim()}</span>`;
             slotTarget.className = 'arrastre-slot fw-bold flex-grow-1';
             slotTarget.dataset.letra = letra;
             actualizarRespuestaArrastre(preguntaId);
@@ -310,6 +316,32 @@ async function entregarExamen(porTiempo) {
 // ---- Mostrar resultados ----
 function mostrarResultados(data) {
     document.getElementById('botoneraEnviar').style.display = 'none';
+
+    if (data.detalles) {
+        data.detalles.forEach(d => {
+            const preguntaCont = document.querySelector(`[data-pregunta="${d.pregunta_id}"]`);
+            if (!preguntaCont) return;
+            preguntaCont.querySelectorAll('.arrastre-zona-drop').forEach(zona => {
+                const slot = zona.querySelector('.arrastre-slot');
+                if (!slot || !slot.dataset.letra) return;
+                const pos = parseInt(zona.dataset.pos);
+                const respuestaArray = respuestas[d.pregunta_id] ? respuestas[d.pregunta_id].split(',') : [];
+                const respuestaEnPos = respuestaArray[pos - 1] || '';
+                const correctaEnPos = preguntas.find(p => p.id == d.pregunta_id)?.respuesta_correcta?.split(',')?.[pos - 1] || '';
+                const esCorrecta = respuestaEnPos.toUpperCase() === correctaEnPos.toUpperCase();
+                zona.classList.add(esCorrecta ? 'arrastre-correcto' : 'arrastre-incorrecto');
+                if (!esCorrecta) {
+                    const label = zona.querySelector('.arrastre-target-label');
+                    if (label) {
+                        const correctLetra = correctaEnPos;
+                        const correctItem = preguntas.find(p => p.id == d.pregunta_id)?.[`opcion_${correctLetra.toLowerCase()}`] || '';
+                        slot.innerHTML += `<br><small class="text-danger fw-bold">→ ${correctLetra}) ${correctItem}</small>`;
+                    }
+                }
+            });
+        });
+    }
+
     const contenedor = document.getElementById('contenedorResultados');
     contenedor.style.display = 'block';
     const esAprobatorio = data.calificacion >= 6;

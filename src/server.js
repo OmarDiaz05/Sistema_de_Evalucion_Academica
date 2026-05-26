@@ -230,9 +230,9 @@ apiRouter.get('/preguntas/:docente_id', (req, res) => {
 
 // Crear pregunta
 apiRouter.post('/preguntas', (req, res) => {
-    const { materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion } = req.body;
-    const query = `INSERT INTO Preguntas (materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    db.query(query, [materia_id, docente_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion], (err, results) => {
+    const { materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion, arrastre_targets } = req.body;
+    const query = `INSERT INTO Preguntas (materia_id, docente_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion, arrastre_targets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    db.query(query, [materia_id, docente_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion, arrastre_targets || null], (err, results) => {
         if (err) {
             console.error('Error al crear pregunta:', err);
             return res.status(500).json({ message: 'Error al crear la pregunta' });
@@ -244,9 +244,9 @@ apiRouter.post('/preguntas', (req, res) => {
 // Editar pregunta
 apiRouter.put('/preguntas/:id', (req, res) => {
     const preguntaId = req.params.id;
-    const { materia_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion } = req.body;
-    const query = `UPDATE Preguntas SET materia_id = ?, texto_pregunta = ?, tipo = ?, opcion_a = ?, opcion_b = ?, opcion_c = ?, opcion_d = ?, respuesta_correcta = ?, tema_retroalimentacion = ? WHERE id = ?`;
-    db.query(query, [materia_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion, preguntaId], (err, results) => {
+    const { materia_id, texto_pregunta, tipo, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, tema_retroalimentacion, arrastre_targets } = req.body;
+    const query = `UPDATE Preguntas SET materia_id = ?, texto_pregunta = ?, tipo = ?, opcion_a = ?, opcion_b = ?, opcion_c = ?, opcion_d = ?, respuesta_correcta = ?, tema_retroalimentacion = ?, arrastre_targets = ? WHERE id = ?`;
+    db.query(query, [materia_id, texto_pregunta, tipo, opcion_a || null, opcion_b || null, opcion_c || null, opcion_d || null, respuesta_correcta, tema_retroalimentacion, arrastre_targets || null, preguntaId], (err, results) => {
         if (err) {
             console.error('Error al editar pregunta:', err);
             return res.status(500).json({ message: 'Error al editar la pregunta' });
@@ -554,7 +554,8 @@ apiRouter.post('/examen/entregar', (req, res) => {
                     calificacion: parseFloat(calificacion.toFixed(2)),
                     total_preguntas: preguntas.length,
                     correctas,
-                    temas_a_repasar: [...new Set(temasFallidos)]
+                    temas_a_repasar: [...new Set(temasFallidos)],
+                    detalles: detalles.map(d => ({ pregunta_id: d.pregunta_id, es_correcta: d.es_correcta }))
                 });
             });
         });
