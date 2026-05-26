@@ -497,7 +497,8 @@ apiRouter.get('/examen/:examen_id/preguntas', (req, res) => {
         const queryPreguntas = `
             SELECT Preguntas.id, Preguntas.texto_pregunta, Preguntas.tipo,
                    Preguntas.opcion_a, Preguntas.opcion_b, Preguntas.opcion_c, Preguntas.opcion_d,
-                   Preguntas.tema_retroalimentacion
+                   Preguntas.respuesta_correcta, Preguntas.tema_retroalimentacion,
+                   Preguntas.arrastre_targets
             FROM Examen_Preguntas
             JOIN Preguntas ON Examen_Preguntas.pregunta_id = Preguntas.id
             WHERE Examen_Preguntas.examen_id = ?
