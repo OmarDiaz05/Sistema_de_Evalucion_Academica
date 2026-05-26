@@ -368,7 +368,6 @@ async function cargarEstudiantes() {
             <div class="d-flex justify-content-between align-items-center border-bottom py-2 estudiante-item" data-id="${e.id}" style="cursor:pointer;">
                 <div>
                     <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-circle text-warning me-2"></i>${e.nombre} ${e.apellido_paterno} ${e.apellido_materno || ''}</h6>
-                    <small class="text-muted">ID: ${e.id}</small>
                 </div>
                 <button class="btn btn-outline-warning btn-sm btn-ver-stats" data-id="${e.id}" data-nombre="${e.nombre} ${e.apellido_paterno}" title="Ver estadísticas">
                     <i class="bi bi-graph-up"></i>
