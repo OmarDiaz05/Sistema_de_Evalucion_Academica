@@ -105,3 +105,5 @@ VALUES ('Oliver', 'Morales', 'Tilin', 'tilin@fes.com', '1234', 'docente', 'DOC-0
 
 INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol) 
 VALUES ('Benito', 'Martinez', 'Garcia', 'tito@fes.com', '12345', 'alumno');
+
+SELECT * FROM Usuarios;
