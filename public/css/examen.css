@@ -1,5 +1,6 @@
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f1f5f9;
 }
 .card {
     transition: transform 0.2s, box-shadow 0.2s;
@@ -24,65 +25,252 @@ body {
 .input-respuesta {
     border-radius: 10px;
 }
-.arrastre-item {
-    cursor: grab;
-    border-radius: 14px;
-    border: 2px solid #e2e8f0;
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-    user-select: none;
-    min-width: 120px;
+
+/* ===== Matching (Arrastre) Styles ===== */
+.matching-column-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Items list (left side) */
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Draggable cards */
+.matching-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
     background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-.arrastre-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #0d6efd;
+
+.matching-card:hover {
+    transform: translateX(4px);
+    border-color: #2563ff;
+    box-shadow: 0 4px 16px rgba(37, 99, 255, 0.12);
 }
-.arrastre-item:active {
+
+.matching-card:active {
     cursor: grabbing;
 }
-.arrastre-arrastrando {
+
+.matching-card.dragging {
     opacity: 0.4;
     transform: scale(0.95);
 }
-.arrastre-zona-drop {
-    min-height: 64px;
+
+.matching-card.placed {
+    opacity: 0.3;
+    border-style: dashed;
+    border-color: #94a3b8;
+}
+
+.matching-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.matching-card-text {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+/* Drop zones (right side) */
+.targets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.matching-dropzone {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
     border: 2.5px dashed #cbd5e1;
     border-radius: 14px;
-    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    overflow: hidden;
+    transition: all 0.2s ease;
     background: #f8fafc;
+    min-height: 72px;
 }
-.arrastre-zona-drop.arrastre-over {
-    background: #dbeafe !important;
+
+.matching-dropzone.drag-over {
     border-color: #2563ff;
     border-style: solid;
+    background: #eff6ff;
     transform: scale(1.02);
+    box-shadow: 0 0 0 3px rgba(37, 99, 255, 0.15);
 }
-.arrastre-zona-drop.arrastre-correcto {
-    background: #d4edda !important;
-    border-color: #28a745;
-    border-style: solid;
+
+.matching-dropzone .target-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    min-width: 40px;
+    background: #1e293b;
+    color: white;
+    font-weight: 800;
+    font-size: 0.9rem;
 }
-.arrastre-zona-drop.arrastre-incorrecto {
-    background: #f8d7da !important;
-    border-color: #dc3545;
-    border-style: solid;
+
+.matching-dropzone .target-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 16px;
+    gap: 6px;
 }
-.arrastre-target-label {
-    font-size: 0.85rem;
-    max-width: 140px;
+
+.matching-dropzone .target-text {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
     line-height: 1.3;
 }
+
+.matching-dropzone .target-slot {
+    min-height: 28px;
+}
+
+.matching-dropzone .slot-placeholder {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.matching-dropzone .slot-filled {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #166534;
+    animation: slotPop 0.3s ease;
+}
+
+.matching-dropzone .slot-filled .matching-badge {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+}
+
+@keyframes slotPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Correct / Incorrect states after submission */
+.matching-dropzone.correct {
+    border-color: #22c55e !important;
+    border-style: solid !important;
+    background: #f0fdf4 !important;
+}
+
+.matching-dropzone.correct .slot-filled {
+    background: #dcfce7;
+    border-color: #22c55e;
+}
+
+.matching-dropzone.incorrect {
+    border-color: #ef4444 !important;
+    border-style: solid !important;
+    background: #fef2f2 !important;
+}
+
+.matching-dropzone.incorrect .slot-filled {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.correct-answer-feedback {
+    font-size: 0.8rem;
+    color: #dc2626;
+    font-weight: 700;
+    margin-top: 4px;
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reset button */
+.matching-reset {
+    margin-top: 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.matching-reset:hover {
+    background: #1e293b;
+    color: white;
+    border-color: #1e293b;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
+    .matching-card {
+        padding: 10px 14px;
+    }
+    .matching-card-text {
+        font-size: 0.85rem;
+    }
+    .matching-dropzone .target-text {
+        font-size: 0.85rem;
+    }
+    .matching-dropzone .target-content {
+        padding: 10px 12px;
+    }
+    .matching-dropzone .target-number {
+        width: 32px;
+        min-width: 32px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
     .card .card-body {
         padding: 1rem !important;
     }
     #timerDisplay {
         font-size: 0.85rem;
         padding: 4px 10px;
-    }
-    .arrastre-target-label {
-        font-size: 0.75rem;
-        max-width: 90px;
     }
 }

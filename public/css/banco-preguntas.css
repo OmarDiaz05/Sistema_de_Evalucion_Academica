@@ -54,8 +54,53 @@ body {
     border: 1.5px solid #e2e8f0;
     background: white;
 }
+/* Matching config rows (teacher form) */
+.matching-config-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.matching-config-row:focus-within {
+    border-color: #2563ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 255, 0.1);
+}
+
+.target-number-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #1e293b;
+    color: white;
+    font-weight: 800;
+    font-size: 0.75rem;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.match-select {
+    width: 80px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+}
+
 @media (max-width: 576px) {
     .card-pregunta {
         margin-bottom: 0.5rem;
+    }
+    .matching-config-row {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .match-select {
+        width: 64px;
     }
 }

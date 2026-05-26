@@ -107,59 +107,56 @@
                             </div>
                             <div class="col-md-6" id="ordenArrastreContainer" style="display:none;">
                                 <label class="form-label fw-bold">Relación (arrastrar)</label>
-                                <p class="text-muted small mb-2">Escribe cada objetivo y selecciona qué opción (A–D) le corresponde:</p>
-                                <div id="arrastreTargetsContainer">
-                                    <div class="mb-2 p-2 border rounded-3 bg-light">
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">1</span>
-                                            <input id="target_1" class="form-control form-control-sm" placeholder="Ej. Absorbe agua y minerales">
-                                            <select id="match_1" class="form-select form-select-sm" style="max-width:80px;">
-                                                <option value="">--</option>
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                                <option value="D">D</option>
-                                            </select>
-                                        </div>
+                                <p class="text-muted small mb-2">Define cada <strong>descripción/objetivo</strong> y selecciona qué <strong>elemento</strong> (A–D) le corresponde:</p>
+                                <div class="d-flex gap-2 mb-1 px-1">
+                                    <span style="width:28px;"></span>
+                                    <span class="small fw-semibold text-muted flex-grow-1">Descripción</span>
+                                    <span class="small fw-semibold text-muted" style="width:80px;text-align:center;">Elemento</span>
+                                </div>
+                                <div id="arrastreTargetsContainer" class="d-flex flex-column gap-2">
+                                    <div class="matching-config-row">
+                                        <span class="target-number-sm">1</span>
+                                        <input id="target_1" class="form-control form-control-sm" placeholder="Ej. Absorbe agua y minerales">
+                                        <select id="match_1" class="form-select form-select-sm match-select">
+                                            <option value="">--</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                        </select>
                                     </div>
-                                    <div class="mb-2 p-2 border rounded-3 bg-light">
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">2</span>
-                                            <input id="target_2" class="form-control form-control-sm" placeholder="Ej. Produce alimento">
-                                            <select id="match_2" class="form-select form-select-sm" style="max-width:80px;">
-                                                <option value="">--</option>
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                                <option value="D">D</option>
-                                            </select>
-                                        </div>
+                                    <div class="matching-config-row">
+                                        <span class="target-number-sm">2</span>
+                                        <input id="target_2" class="form-control form-control-sm" placeholder="Ej. Produce alimento">
+                                        <select id="match_2" class="form-select form-select-sm match-select">
+                                            <option value="">--</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                        </select>
                                     </div>
-                                    <div class="mb-2 p-2 border rounded-3 bg-light">
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">3</span>
-                                            <input id="target_3" class="form-control form-control-sm" placeholder="Ej. Transporta nutrientes">
-                                            <select id="match_3" class="form-select form-select-sm" style="max-width:80px;">
-                                                <option value="">--</option>
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                                <option value="D">D</option>
-                                            </select>
-                                        </div>
+                                    <div class="matching-config-row">
+                                        <span class="target-number-sm">3</span>
+                                        <input id="target_3" class="form-control form-control-sm" placeholder="Ej. Transporta nutrientes">
+                                        <select id="match_3" class="form-select form-select-sm match-select">
+                                            <option value="">--</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                        </select>
                                     </div>
-                                    <div class="mb-2 p-2 border rounded-3 bg-light">
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <span class="badge bg-dark rounded-circle" style="min-width:28px;">4</span>
-                                            <input id="target_4" class="form-control form-control-sm" placeholder="Ej. Reproducción">
-                                            <select id="match_4" class="form-select form-select-sm" style="max-width:80px;">
-                                                <option value="">--</option>
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                                <option value="D">D</option>
-                                            </select>
-                                        </div>
+                                    <div class="matching-config-row">
+                                        <span class="target-number-sm">4</span>
+                                        <input id="target_4" class="form-control form-control-sm" placeholder="Ej. Reproducción">
+                                        <select id="match_4" class="form-select form-select-sm match-select">
+                                            <option value="">--</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

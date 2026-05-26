@@ -64,42 +64,43 @@ function renderizarPreguntas() {
             let targets = ['','','',''];
             try { targets = JSON.parse(p.arrastre_targets) || targets; } catch(e) {}
             const hasTargets = targets.some(t => t);
+            if (!hasTargets) targets = ['Objetivo 1', 'Objetivo 2', 'Objetivo 3', 'Objetivo 4'];
             const shuffled = [...opciones].sort(() => Math.random() - 0.5);
             const letrasColor = { A:'primary', B:'success', C:'danger', D:'warning text-dark' };
             inputHTML = `
                 <div class="arrastre-container" data-pregunta="${p.id}">
-                    <p class="text-muted small mb-3"><i class="bi bi-arrows-move me-1"></i>${hasTargets ? 'Arrastra cada elemento a su descripción correcta' : 'Arrastra cada opción a su posición correcta'}:</p>
-                    <div class="row g-3">
+                    <div class="row g-4">
                         <div class="col-md-5">
-                            <div class="arrastre-opciones d-flex flex-wrap gap-2 p-3 bg-light rounded-3 border" id="arrastre_opts_${p.id}">
+                            <div class="matching-column-label"><i class="bi bi-palette me-1"></i> Elementos</div>
+                            <div class="items-list" id="arrastre_opts_${p.id}">
                                 ${shuffled.map(o => `
-                                    <div class="arrastre-item card border-0 shadow-sm p-2 px-3"
-                                         draggable="true"
-                                         data-pregunta="${p.id}"
-                                         data-letra="${o.letra}"
+                                    <div class="matching-card" draggable="true"
+                                         data-pregunta="${p.id}" data-letra="${o.letra}"
                                          id="drag_${p.id}_${o.letra}">
-                                        <span class="badge bg-${letrasColor[o.letra]} rounded-pill me-1">${o.letra}</span>
-                                        <span class="small">${o.texto}</span>
+                                        <span class="matching-badge bg-${letrasColor[o.letra].split(' ')[0]}">${o.letra}</span>
+                                        <span class="matching-card-text">${o.texto}</span>
                                     </div>
                                 `).join('')}
                             </div>
-                            <div class="text-center text-muted small mt-2" id="arrastre_msg_${p.id}">⟵ Elementos</div>
                         </div>
                         <div class="col-md-7">
-                            <div class="arrastre-posiciones d-flex flex-column gap-2" id="arrastre_pos_${p.id}">
+                            <div class="matching-column-label"><i class="bi bi-geo-alt me-1"></i> Descripciones</div>
+                            <div class="targets-list" id="arrastre_pos_${p.id}">
                                 ${[1,2,3,4].map(n => {
-                                    const label = hasTargets ? (targets[n-1] || `Posición ${n}`) : `Posición ${n}`;
                                     return `
-                                    <div class="arrastre-zona-drop border-2 rounded-3 p-3 bg-white d-flex align-items-center"
-                                         data-pos="${n}" data-pregunta="${p.id}" id="dropzone_${p.id}_${n}">
-                                        <span class="badge bg-dark rounded-circle me-2" style="min-width:28px;">${n}</span>
-                                        <span class="arrastre-target-label small fw-semibold text-secondary me-2 flex-shrink-0">${label}</span>
-                                        <span class="arrastre-slot text-muted small flex-grow-1" id="slot_${p.id}_${n}">Vacío</span>
+                                    <div class="matching-dropzone" data-pregunta="${p.id}" data-pos="${n}" id="dropzone_${p.id}_${n}">
+                                        <span class="target-number">${n}</span>
+                                        <div class="target-content">
+                                            <span class="target-text">${targets[n-1]}</span>
+                                            <span class="target-slot" id="slot_${p.id}_${n}">
+                                                <span class="slot-placeholder"><i class="bi bi-plus-circle me-1"></i>Suelta aquí</span>
+                                            </span>
+                                        </div>
                                     </div>`;
                                 }).join('')}
                             </div>
-                            <button class="btn btn-sm btn-outline-secondary mt-2 w-100 btn-limpiar-arrastre" data-pregunta="${p.id}">
-                                <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+                            <button class="btn btn-sm btn-outline-secondary matching-reset" data-pregunta="${p.id}">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reiniciar
                             </button>
                         </div>
                     </div>
@@ -139,70 +140,83 @@ function guardarRespuesta(e) {
 }
 
 // ---- Drag & Drop para preguntas tipo arrastre (matching) ----
+function getColor(letra) {
+    const c = { A:'primary', B:'success', C:'danger', D:'warning text-dark' };
+    return c[letra] || 'secondary';
+}
+
 function iniciarDragDrop() {
-    document.querySelectorAll('.arrastre-item').forEach(item => {
+    document.querySelectorAll('.matching-card').forEach(item => {
         item.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', JSON.stringify({
-                preguntaId: e.target.dataset.pregunta,
-                letra: e.target.dataset.letra
-            }));
-            e.target.classList.add('arrastre-arrastrando');
+            const preguntaId = item.dataset.pregunta;
+            const letra = item.dataset.letra;
+            if (item.classList.contains('placed')) {
+                document.querySelectorAll(`#arrastre_pos_${preguntaId} .target-slot`).forEach(s => {
+                    if (s.dataset.letra === letra) {
+                        s.innerHTML = `<span class="slot-placeholder"><i class="bi bi-plus-circle me-1"></i>Suelta aquí</span>`;
+                        s.className = 'target-slot';
+                        delete s.dataset.letra;
+                    }
+                });
+                item.classList.remove('placed');
+            }
+            e.dataTransfer.setData('text/plain', JSON.stringify({ preguntaId, letra }));
+            actualizarRespuestaArrastre(parseInt(preguntaId));
+            item.classList.add('dragging');
         });
-        item.addEventListener('dragend', (e) => {
-            e.target.classList.remove('arrastre-arrastrando');
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
         });
     });
-    document.querySelectorAll('.arrastre-zona-drop').forEach(zona => {
+    document.querySelectorAll('.matching-dropzone').forEach(zona => {
         zona.addEventListener('dragover', (e) => {
             e.preventDefault();
-            zona.classList.add('arrastre-over');
+            zona.classList.add('drag-over');
         });
         zona.addEventListener('dragleave', () => {
-            zona.classList.remove('arrastre-over');
+            zona.classList.remove('drag-over');
         });
         zona.addEventListener('drop', (e) => {
             e.preventDefault();
-            zona.classList.remove('arrastre-over');
+            zona.classList.remove('drag-over');
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const preguntaId = parseInt(zona.dataset.pregunta);
             const pos = parseInt(zona.dataset.pos);
             const letra = data.letra;
             const itemOrig = document.getElementById(`drag_${preguntaId}_${letra}`);
-            if (!itemOrig) return;
-            document.querySelectorAll(`#arrastre_pos_${preguntaId} .arrastre-zona-drop`).forEach(z => {
-                const slot = z.querySelector('.arrastre-slot');
-                if (slot.dataset.letra === letra) {
-                    slot.innerHTML = 'Vacío';
-                    slot.className = 'arrastre-slot text-muted small flex-grow-1';
-                    delete slot.dataset.letra;
+            if (!itemOrig || itemOrig.classList.contains('placed')) return;
+            document.querySelectorAll(`#arrastre_pos_${preguntaId} .target-slot`).forEach(s => {
+                if (s.dataset.letra === letra) {
+                    s.innerHTML = `<span class="slot-placeholder"><i class="bi bi-plus-circle me-1"></i>Suelta aquí</span>`;
+                    s.className = 'target-slot';
+                    delete s.dataset.letra;
                 }
             });
             const slotTarget = document.getElementById(`slot_${preguntaId}_${pos}`);
             if (slotTarget.dataset.letra) {
                 const oldLetra = slotTarget.dataset.letra;
                 const oldItem = document.getElementById(`drag_${preguntaId}_${oldLetra}`);
-                if (oldItem) oldItem.style.display = '';
+                if (oldItem) oldItem.classList.remove('placed');
             }
-            itemOrig.style.display = 'none';
-            const label = zona.querySelector('.arrastre-target-label');
-            const labelText = label ? label.textContent : '';
-            slotTarget.innerHTML = `<span class="fw-bold text-primary"><span class="badge bg-primary rounded-pill me-1">${letra}</span> ${itemOrig.querySelector('span:last-child')?.textContent || itemOrig.textContent.replace(/^.*?[\)]\s*/, '').trim()}</span>`;
-            slotTarget.className = 'arrastre-slot fw-bold flex-grow-1';
+            itemOrig.classList.add('placed');
+            const cardText = itemOrig.querySelector('.matching-card-text')?.textContent || '';
+            const colorClass = getColor(letra).split(' ')[0];
+            slotTarget.innerHTML = `<span class="slot-filled"><span class="matching-badge bg-${colorClass}">${letra}</span> ${cardText}</span>`;
+            slotTarget.className = 'target-slot filled';
             slotTarget.dataset.letra = letra;
             actualizarRespuestaArrastre(preguntaId);
         });
     });
-    document.querySelectorAll('.btn-limpiar-arrastre').forEach(btn => {
+    document.querySelectorAll('.matching-reset').forEach(btn => {
         btn.addEventListener('click', () => {
             const preguntaId = btn.dataset.pregunta;
-            // Devolver todos los items a opciones
-            document.querySelectorAll(`#arrastre_pos_${preguntaId} .arrastre-slot`).forEach(slot => {
+            document.querySelectorAll(`#arrastre_pos_${preguntaId} .target-slot`).forEach(slot => {
                 if (slot.dataset.letra) {
                     const item = document.getElementById(`drag_${preguntaId}_${slot.dataset.letra}`);
-                    if (item) item.style.display = '';
+                    if (item) item.classList.remove('placed');
                 }
-                slot.innerHTML = 'Vacío';
-                slot.className = 'arrastre-slot text-muted small flex-grow-1';
+                slot.innerHTML = `<span class="slot-placeholder"><i class="bi bi-plus-circle me-1"></i>Suelta aquí</span>`;
+                slot.className = 'target-slot';
                 delete slot.dataset.letra;
             });
             document.getElementById(`hidden_${preguntaId}`).value = '';
@@ -319,23 +333,23 @@ function mostrarResultados(data) {
 
     if (data.detalles) {
         data.detalles.forEach(d => {
-            const preguntaCont = document.querySelector(`[data-pregunta="${d.pregunta_id}"]`);
+            const preguntaCont = document.querySelector(`.arrastre-container[data-pregunta="${d.pregunta_id}"]`);
             if (!preguntaCont) return;
-            preguntaCont.querySelectorAll('.arrastre-zona-drop').forEach(zona => {
-                const slot = zona.querySelector('.arrastre-slot');
-                if (!slot || !slot.dataset.letra) return;
+            preguntaCont.querySelectorAll('.matching-dropzone').forEach(zona => {
                 const pos = parseInt(zona.dataset.pos);
                 const respuestaArray = respuestas[d.pregunta_id] ? respuestas[d.pregunta_id].split(',') : [];
                 const respuestaEnPos = respuestaArray[pos - 1] || '';
                 const correctaEnPos = preguntas.find(p => p.id == d.pregunta_id)?.respuesta_correcta?.split(',')?.[pos - 1] || '';
-                const esCorrecta = respuestaEnPos.toUpperCase() === correctaEnPos.toUpperCase();
-                zona.classList.add(esCorrecta ? 'arrastre-correcto' : 'arrastre-incorrecto');
-                if (!esCorrecta) {
-                    const label = zona.querySelector('.arrastre-target-label');
-                    if (label) {
-                        const correctLetra = correctaEnPos;
-                        const correctItem = preguntas.find(p => p.id == d.pregunta_id)?.[`opcion_${correctLetra.toLowerCase()}`] || '';
-                        slot.innerHTML += `<br><small class="text-danger fw-bold">→ ${correctLetra}) ${correctItem}</small>`;
+                const isCorrect = respuestaEnPos.toUpperCase() === correctaEnPos.toUpperCase();
+                zona.classList.add(isCorrect ? 'correct' : 'incorrect');
+                if (!isCorrect && correctaEnPos) {
+                    const correctItem = preguntas.find(p => p.id == d.pregunta_id)?.[`opcion_${correctaEnPos.toLowerCase()}`] || '';
+                    const content = zona.querySelector('.target-content');
+                    if (content) {
+                        const feedback = document.createElement('span');
+                        feedback.className = 'correct-answer-feedback';
+                        feedback.innerHTML = `<i class="bi bi-check-circle me-1"></i>Respuesta: ${correctaEnPos}) ${correctItem}`;
+                        content.appendChild(feedback);
                     }
                 }
             });
