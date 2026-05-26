@@ -8,10 +8,18 @@ const modalPregunta = new bootstrap.Modal(document.getElementById('modalPregunta
 // ---- Mostrar/ocultar campos según tipo ----
 document.getElementById('tipo').addEventListener('change', function () {
     const esMultiple = this.value === 'opcion_multiple';
-    document.getElementById('opcionesContainer').style.display = esMultiple ? 'flex' : 'none';
-    document.getElementById('respuesta_correcta_select').style.display = esMultiple ? 'block' : 'none';
-    document.getElementById('respuesta_correcta_text').style.display = esMultiple ? 'none' : 'block';
-    document.getElementById('labelRespuesta').textContent = esMultiple ? 'Respuesta Correcta' : 'Respuesta Correcta (texto)';
+    const esArrastre = this.value === 'arrastre';
+    const mostrarOpciones = esMultiple || esArrastre;
+    document.getElementById('opcionesContainer').style.display = mostrarOpciones ? 'flex' : 'none';
+    document.getElementById('respuesta_correcta_select').style.display = mostrarOpciones ? 'block' : 'none';
+    document.getElementById('respuesta_correcta_text').style.display = mostrarOpciones ? 'none' : 'block';
+    if (esMultiple) {
+        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta';
+    } else if (esArrastre) {
+        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta (arrastrar)';
+    } else {
+        document.getElementById('labelRespuesta').textContent = 'Respuesta Correcta (texto)';
+    }
 });
 // ---- Botón nueva pregunta ----
 document.getElementById('btnNuevaPregunta').addEventListener('click', () => {
@@ -28,7 +36,7 @@ document.getElementById('btnNuevaPregunta').addEventListener('click', () => {
 document.getElementById('formPregunta').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipo').value;
-    const respuestaCorrecta = tipo === 'opcion_multiple'
+    const respuestaCorrecta = (tipo === 'opcion_multiple' || tipo === 'arrastre')
         ? document.getElementById('respuesta_correcta_select').value
         : document.getElementById('respuesta_correcta_text').value;
     const data = {
@@ -147,11 +155,11 @@ async function editarPregunta(id) {
         document.getElementById('opcion_c').value = p.opcion_c || '';
         document.getElementById('opcion_d').value = p.opcion_d || '';
         document.getElementById('tema_retroalimentacion').value = p.tema_retroalimentacion;
-        const esMultiple = p.tipo === 'opcion_multiple';
-        document.getElementById('opcionesContainer').style.display = esMultiple ? 'flex' : 'none';
-        document.getElementById('respuesta_correcta_select').style.display = esMultiple ? 'block' : 'none';
-        document.getElementById('respuesta_correcta_text').style.display = esMultiple ? 'none' : 'block';
-        if (esMultiple) {
+        const tieneOpciones = p.tipo === 'opcion_multiple' || p.tipo === 'arrastre';
+        document.getElementById('opcionesContainer').style.display = tieneOpciones ? 'flex' : 'none';
+        document.getElementById('respuesta_correcta_select').style.display = tieneOpciones ? 'block' : 'none';
+        document.getElementById('respuesta_correcta_text').style.display = tieneOpciones ? 'none' : 'block';
+        if (tieneOpciones) {
             document.getElementById('respuesta_correcta_select').value = p.respuesta_correcta;
         } else {
             document.getElementById('respuesta_correcta_text').value = p.respuesta_correcta;
