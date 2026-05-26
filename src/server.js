@@ -518,25 +518,43 @@ apiRouter.get('/examen/:examen_id/preguntas', (req, res) => {
 // Entregar examen (calificar automáticamente)
 apiRouter.post('/examen/entregar', (req, res) => {
     const { examen_id, estudiante_id, respuestas, tiempo_tomado } = req.body;
-    if (!examen_id || !estudiante_id || !respuestas) {
+    if (!examen_id || !estudiante_id || respuestas == null) {
         return res.status(400).json({ message: 'Faltan datos' });
     }
-    const queryPreguntas = 'SELECT id, respuesta_correcta, tema_retroalimentacion FROM Preguntas WHERE id IN (?)';
-    const ids = respuestas.map(r => r.pregunta_id);
-    db.query(queryPreguntas, [ids], (err, preguntas) => {
+    const respuestasArr = Array.isArray(respuestas) ? respuestas : [];
+    const queryPreguntas = `
+        SELECT p.id, p.tipo, p.respuesta_correcta, p.tema_retroalimentacion
+        FROM Preguntas p
+        JOIN Examen_Preguntas ep ON p.id = ep.pregunta_id
+        WHERE ep.examen_id = ?
+    `;
+    db.query(queryPreguntas, [examen_id], (err, preguntas) => {
         if (err || preguntas.length === 0) return res.status(500).json({ message: 'Error del servidor' });
         let correctas = 0;
         const detalles = preguntas.map(p => {
-            const respuesta = respuestas.find(r => r.pregunta_id === p.id);
+            const respuesta = respuestasArr.find(r => r.pregunta_id === p.id);
             const dada = respuesta ? respuesta.respuesta_dada.trim().toUpperCase() : '';
             const correcta = p.respuesta_correcta.trim().toUpperCase();
-            const esCorrecta = dada === correcta;
-            if (esCorrecta) correctas++;
+            let esCorrectaBool, valorPregunta;
+            if (p.tipo === 'arrastre') {
+                const dadaArr = dada.split(',');
+                const correctaArr = correcta.split(',');
+                let aciertos = 0;
+                for (let i = 0; i < 4; i++) {
+                    if ((dadaArr[i] || '') === (correctaArr[i] || '')) aciertos++;
+                }
+                valorPregunta = aciertos / 4;
+                esCorrectaBool = aciertos === 4 ? 1 : 0;
+            } else {
+                esCorrectaBool = dada === correcta ? 1 : 0;
+                valorPregunta = esCorrectaBool;
+            }
+            correctas += valorPregunta;
             return {
                 pregunta_id: p.id,
                 respuesta_dada: dada,
-                es_correcta: esCorrecta,
-                tema_retroalimentacion: esCorrecta ? null : p.tema_retroalimentacion
+                es_correcta: esCorrectaBool,
+                tema_retroalimentacion: esCorrectaBool ? null : p.tema_retroalimentacion
             };
         });
         const calificacion = (correctas / preguntas.length) * 10;
