@@ -762,7 +762,7 @@ apiRouter.get('/alumno/historial/:estudianteId', (req, res) => {
 // Registro de usuarios
 apiRouter.post('/registro', (req, res) => {
     const { nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula } = req.body;
-    if (!nombre || !apellido_paterno || !correo || !password || !rol) {
+    if (!nombre || !apellido_paterno || !apellido_materno || !correo || !password || !rol) {
         return res.status(400).json({ message: 'Todos los campos obligatorios deben ser llenados' });
     }
     if (rol === 'docente' && !matricula) {
@@ -773,7 +773,7 @@ apiRouter.post('/registro', (req, res) => {
         try {
             const passwordHash = await bcrypt.hash(password, 10);
             const query = 'INSERT INTO Usuarios (nombre, apellido_paterno, apellido_materno, correo, password, rol, matricula) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            db.query(query, [nombre, apellido_paterno, apellido_materno || null, correo, passwordHash, rol, matricula || null], (err, result) => {
+            db.query(query, [nombre, apellido_paterno, apellido_materno, correo, passwordHash, rol, matricula || null], (err, result) => {
                 if (err) {
                     if (err.code === 'ER_DUP_ENTRY') {
                         return res.status(400).json({ message: 'El correo ya está registrado' });
