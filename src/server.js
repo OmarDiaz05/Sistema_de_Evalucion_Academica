@@ -53,8 +53,8 @@ apiRouter.post('/login', (req, res) => {
         let passwordValida = false;
         try {
             passwordValida = bcrypt.compareSync(password, usuario.password);
-        } catch {
-            passwordValida = (password === usuario.password);
+        } catch (err) {
+            console.error('Error al verificar contraseña con bcrypt:', err);
         }
         if (!passwordValida) {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
